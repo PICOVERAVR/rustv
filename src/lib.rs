@@ -29,7 +29,7 @@ enum Itype {
     Ecall {imm: u16},
 
     //Zfencei extension
-    Fence {rd: usize, rs1: usize, succ: u8, pred: u8, fm: u8},
+    //Fence {rd: usize, rs1: usize, succ: u8, pred: u8, fm: u8},
 }
 
 fn crack(instr: u32) -> Itype {
@@ -74,8 +74,8 @@ fn crack(instr: u32) -> Itype {
 
 // sign extend the value in x with b bits
 fn sext(x: u32, b: usize) -> u32 {
-    if x >> (b - 1) & 1 == 1 {
-        return u32::MAX << b & x as u32
+    if (x >> (b - 1)) & 1 == 1 {
+        return (u32::MAX << b) | x as u32
     }
     
     x as u32
@@ -202,9 +202,8 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
 
                     }, // load
                     0b1100111 => {
-                        // TODO
-                        let ext_imm = sext(imm as u32, 12);
-                        s.regs[rd] = (s.regs[rs1] + ext_imm) & 0xfffffffe;
+                        s.regs[rd] = s.pc;
+                        s.pc += (s.regs[rs1] + sext(imm as u32, 12)) & 0xfffffffe;
                     }, // jalr
                     _ => panic!("unrecognized opcode {}", _op)
                 }
@@ -274,11 +273,24 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
                 }
             },
             Itype::J {_op, rd, imm} => {
-                // TODO
                 s.regs[rd] = s.pc;
                 s.pc += sext(imm, 20) + s.pc - 4;
             }, // jal
-            _ => panic!("unrecognized instruction type")
+            Itype::Ecall {imm} => {
+                panic!("unimplemented Ecall type instruction, imm {}", imm);
+            },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sext_test() {
+        let res = sext(0x800, 12);
+
+        assert_eq!(res, 0xfffff800);
     }
 }

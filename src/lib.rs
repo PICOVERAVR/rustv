@@ -72,8 +72,17 @@ fn crack(instr: u32) -> Itype {
     }
 }
 
+// sign extend the value in x with b bits
+fn sext(x: u32, b: usize) -> u32 {
+    if x >> (b - 1) & 1 == 1 {
+        return u32::MAX << b & x as u32
+    }
+    
+    x as u32
+}
+
 pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
-    let mut dmem = vec![0; dmem_len];
+    let mut dmem: Vec<u32> = vec![0; dmem_len];
 
     loop {
         let upc = s.pc as usize;
@@ -129,7 +138,7 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
                     continue;
                 }
 
-                let ext_imm = u32::MAX << 12 & imm as u32;
+                let ext_imm = sext(imm as u32, 12);
 
                 match _op {
                     0b0010011 => {
@@ -159,7 +168,7 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
                         }
                     }, // immediate instruction
                     0b0000011 => {
-                        let ext_imm = u32::MAX << 12 & imm as u32;
+                        let ext_imm = sext(imm as u32, 12);
                         let addr = (rs1 as u32 + ext_imm) as usize;
 
                         if addr >= dmem_len {
@@ -170,15 +179,38 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
                             panic!("misaligned memory access {}", addr)
                         }
 
-                        // match funct3 {
-                        //     0b000 => s.regs[rd] = 
-                        // }
-                    }
+                        let mut val = match funct3 {
+                            0b000 | 0b100 => dmem[addr] % u8::MAX as u32, // lb(u)
+                            0b001 | 0b101 => dmem[addr] % u16::MAX as u32, // lh(u)
+                            0b010 => dmem[addr], // lw
+                            _ => panic!("illegal funct3 field {}", funct3)
+                        };
+
+                        // we can't move this up because exceptions still need to happen when rd is x0
+                        if rd == 0 {
+                            continue;
+                        }
+
+                        // lb and lh need sign-extension
+                        match funct3 {
+                            0b000 => val = sext(val, 8),
+                            0b001 => val = sext(val, 16),
+                            _ => (),
+                        }
+
+                        s.regs[rd] = val;
+
+                    }, // load
+                    0b1100111 => {
+                        // TODO
+                        let ext_imm = sext(imm as u32, 12);
+                        s.regs[rd] = (s.regs[rs1] + ext_imm) & 0xfffffffe;
+                    }, // jalr
                     _ => panic!("unrecognized opcode {}", _op)
                 }
             },
             Itype::S {_op, funct3, rs1, rs2, imm} => {
-                let ext_imm = u32::MAX << 12 & imm as u32;
+                let ext_imm = if imm >> 12 & 1 == 1 { u32::MAX << 12 & imm as u32 } else { imm as u32 };
                 let addr = (rs1 as u32 + ext_imm) as usize;
 
                 if addr >= dmem_len {
@@ -197,8 +229,8 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
                 }
             },
             Itype::B {_op, funct3, rs1, rs2, imm} => {
-                let ext_imm = u32::MAX << 12 & imm as u32;
-                let new_addr = (s.pc as i32 + ext_imm as i32) as u32;
+                let ext_imm = if imm >> 12 & 1 == 1 { u32::MAX << 12 & imm as u32 } else { imm as u32 };
+                let new_addr = ((s.pc - 4) as i32 + ext_imm as i32) as u32;
 
                 match funct3 {
                     0b000 => {
@@ -237,10 +269,15 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
             Itype::U {_op, rd, imm} => {
                 match _op {
                     0b0110111 => s.regs[rd] = imm << 12, // lui
-                    0b0010111 => s.regs[rd] = s.pc + (imm << 12), // auipc
+                    0b0010111 => s.regs[rd] = (s.pc - 4) + (imm << 12), // auipc
                     _ => panic!("unknown op field {}", _op)
                 }
-            }
+            },
+            Itype::J {_op, rd, imm} => {
+                // TODO
+                s.regs[rd] = s.pc;
+                s.pc += sext(imm, 20) + s.pc - 4;
+            }, // jal
             _ => panic!("unrecognized instruction type")
         }
     }

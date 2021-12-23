@@ -16,17 +16,17 @@ pub fn sll(s: &mut State, rs1: usize, rs2: usize, rd: usize) {
 
 pub fn slt(s: &mut State, rs1: usize, rs2: usize, rd: usize) {
     if (s.regs[rs1] as i32) < s.regs[rs2] as i32 {
-        s.regs[rd] = 0
-    } else {
         s.regs[rd] = 1
+    } else {
+        s.regs[rd] = 0
     }
 }
 
 pub fn sltu(s: &mut State, rs1: usize, rs2: usize, rd: usize) {
     if s.regs[rs1] < s.regs[rs2] {
-        s.regs[rd] = 0
-    } else {
         s.regs[rd] = 1
+    } else {
+        s.regs[rd] = 0
     }
 }
 
@@ -56,17 +56,17 @@ pub fn addi(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
 
 pub fn slti(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
     if (s.regs[rs1] as i32) < ext_imm as i32 {
-        s.regs[rd] = 0
-    } else {
         s.regs[rd] = 1
+    } else {
+        s.regs[rd] = 0
     }
 }
 
 pub fn sltiu(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
     if s.regs[rs1] < ext_imm {
-        s.regs[rd] = 0
-    } else {
         s.regs[rd] = 1
+    } else {
+        s.regs[rd] = 0
     }
 }
 
@@ -104,8 +104,10 @@ pub fn lx(s: &mut State, rs1: usize, ext_imm: u32, rd: usize, dmem: &[u8], len: 
         panic!("illegal memory read at byte address {:x}", addr)
     }
 
-    if addr % (s.ialign / 8) as usize != 0 {
-        panic!("misaligned memory access at byte address {:x}", addr)
+    match addr % 4 {
+        1 | 2 | 3 if len == 32 => panic!("misaligned word load at byte address {:x}", addr),
+        1 | 3 if len == 16 => panic!("misaligned halfword load at byte address {:x}", addr),
+        _ => (),
     }
 
     let mut val: u32 = 0;
@@ -136,8 +138,10 @@ pub fn sx(s: &mut State, rs1: usize, ext_imm: u32, rs2: usize, dmem: &mut [u8], 
         panic!("illegal memory write at byte address {:x}", addr)
     }
 
-    if addr % (s.ialign / 8) as usize != 0 {
-        panic!("misaligned memory access at byte address {:x}", addr)
+    match addr % 4 {
+        1 | 2 | 3 if len == 32 => panic!("misaligned word store at byte address {:x}", addr),
+        1 | 3 if len == 16 => panic!("misaligned halfword store at byte address {:x}", addr),
+        _ => (),
     }
 
     let val = s.regs[rs2];
@@ -148,55 +152,98 @@ pub fn sx(s: &mut State, rs1: usize, ext_imm: u32, rs2: usize, dmem: &mut [u8], 
 }
 
 pub fn jalr(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
+    let add = (s.regs[rs1] as i32 + ext_imm as i32) & -2; // -2 unsigned is 0xfffffffe
+    let dest = ((s.pc - 4) as i32 + add) as u32;
+
+    if dest % 4 != 0 {
+        panic!("misaligned destination byte address {:x}", dest);
+    }
+
     s.regs[rd] = s.pc;
-    s.pc += (s.regs[rs1] + ext_imm) & 0xfffffffe;
+    s.pc = dest;
 }
 
 pub fn beq(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
     if s.regs[rs1] == s.regs[rs2] {
-        s.pc = ((s.pc - 4) as i32 + ext_imm as i32) as u32
+        let dest = ((s.pc - 4) as i32 + ext_imm as i32) as u32;
+        if dest % 4 != 0 {
+            panic!("misaligned destination byte address {:x}", dest);
+        }
+
+        s.pc = dest;
     }
 }
 
 pub fn bne(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
     if s.regs[rs1] != s.regs[rs2] {
-        s.pc = ((s.pc - 4) as i32 + ext_imm as i32) as u32
+        let dest = ((s.pc - 4) as i32 + ext_imm as i32) as u32;
+        if dest % 4 != 0 {
+            panic!("misaligned destination byte address {:x}", dest);
+        }
+
+        s.pc = dest;
     }
 }
 
 pub fn blt(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
     if s.regs[rs1] < s.regs[rs2] {
-        s.pc = ((s.pc - 4) as i32 + ext_imm as i32) as u32
+        let dest = ((s.pc - 4) as i32 + ext_imm as i32) as u32;
+        if dest % 4 != 0 {
+            panic!("misaligned destination byte address {:x}", dest);
+        }
+
+        s.pc = dest;
     }
 }
 
 pub fn bge(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
     if s.regs[rs1] >= s.regs[rs2] {
-        s.pc = ((s.pc - 4) as i32 + ext_imm as i32) as u32
+        let dest = ((s.pc - 4) as i32 + ext_imm as i32) as u32;
+        if dest % 4 != 0 {
+            panic!("misaligned destination byte address {:x}", dest);
+        }
+
+        s.pc = dest;
     }
 }
 
 pub fn bltu(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
     if s.regs[rs1] < s.regs[rs2] {
-        s.pc = ((s.pc - 4) as i32 + ext_imm as i32) as u32
+        let dest = ((s.pc - 4) as i32 + ext_imm as i32) as u32;
+        if dest % 4 != 0 {
+            panic!("misaligned destination byte address {:x}", dest);
+        }
+
+        s.pc = dest;
     }
 }
 
 pub fn bgeu(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
     if s.regs[rs1] < s.regs[rs2] {
-        s.pc = ((s.pc - 4) as i32 + ext_imm as i32) as u32
+        let dest = ((s.pc - 4) as i32 + ext_imm as i32) as u32;
+        if dest % 4 != 0 {
+            panic!("misaligned destination byte address {:x}", dest);
+        }
+
+        s.pc = dest;
     }
 }
 
 pub fn lui(s: &mut State, rd: usize, imm: u32) {
-    s.regs[rd] = imm << 12
+    s.regs[rd] = imm
 }
 
 pub fn auipc(s: &mut State, rd: usize, imm: u32) {
-    s.regs[rd] = (s.pc - 4) + (imm << 12)
+    s.regs[rd] = (s.pc - 4) + imm
 }
 
 pub fn jal(s: &mut State, rd: usize, imm: u32) {
+    let dest = ((s.pc - 4) as i32 + sext(imm, 20) as i32) as u32;
+
+    if dest % 4 != 0 {
+        panic!("misaligned destination byte address {:x}", dest);
+    }
+
     s.regs[rd] = s.pc;
-    s.pc += sext(imm, 20) + s.pc - 4;
+    s.pc = dest;
 }

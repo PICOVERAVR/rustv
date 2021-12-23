@@ -18,7 +18,7 @@ fn st() {
 
     let mut dv = vec![0; 8];
 
-    let regs = run(iv, s, &mut dv).gprs();
+    run(iv, s, &mut dv).gprs();
 
     assert_eq!(dv[0], 0);
     assert_eq!(dv[1], 0);
@@ -33,6 +33,26 @@ fn st() {
 
 #[test]
 fn ld() {
-    // TODO
-    panic!()
+    // read a word, then a halfword, then a byte from the same memory location
+    let iv = vec![
+        0x83, 0x20, 0x00, 0x00, // lw x1, 0(x0)
+        0x03, 0x11, 0x20, 0x00, // lh x2, 2(x0)
+        0x83, 0x01, 0x30, 0x00, // lb x3, 3(x0)
+    ];
+
+    let s = State::new(0);
+
+    let mut dv = vec![1, 2, 3, 4, 5, 6, 7, 8];
+
+    let regs = run(iv, s, &mut dv).gprs();
+
+    println!("x1: {:x}", regs[1]);
+    println!("x2: {:x}", regs[2]);
+    println!("x3: {:x}", regs[3]);
+
+    assert_eq!(regs[0], 0);
+    assert_eq!(regs[1], 0x04030201);
+    assert_eq!(regs[2], 0x0403);
+    assert_eq!(regs[3], 0x04);
+    assert_eq!(regs[4], 0);
 }

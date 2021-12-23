@@ -1,5 +1,8 @@
+mod rv32i;
+use rv32i::*;
+
 // implements RV32I
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct State {
     regs: [u32; 32],
     pc: u32,
@@ -15,9 +18,18 @@ impl State {
             ialign: 32,
         }
     }
+
+    pub fn gprs(&self) -> [u32; 32] {
+        self.regs
+    }
+
+    pub fn pc(&self) -> u32 {
+        self.pc
+    }
 }
 
 // stores all decoded instruction data with immediates unpacked
+#[derive(Debug)]
 enum Itype {
     // RV32I
     R {_op: u8, rd: usize, funct3: u8, rs1: usize, rs2: usize, funct7: u8},
@@ -26,14 +38,16 @@ enum Itype {
     B {_op: u8, funct3: u8, rs1: usize, rs2: usize, imm: u16},
     U {_op: u8, rd: usize, imm: u32},
     J {_op: u8, rd: usize, imm: u32},
+
+    // essentially Zicsr extension
     Ecall {imm: u16},
 
-    //Zfencei extension
+    // Zfencei extension
     //Fence {rd: usize, rs1: usize, succ: u8, pred: u8, fm: u8},
 }
 
 fn crack(instr: u32) -> Itype {
-    let _op = (instr & 0b111111) as u8;
+    let _op = (instr & 0b1111111) as u8;
     let rd = ((instr >> 7) & 0b11111) as usize;
     let funct3 = ((instr >> 12) & 0b111) as u8;
     let funct7 = (instr >> 25) as u8;
@@ -41,19 +55,20 @@ fn crack(instr: u32) -> Itype {
     let rs2 = ((instr >> 20) & 0b11111) as usize;
 
     let imm_j = 
-        (((instr >> 21) & 0b1111111111) << 1) + 
-        ((instr >> 20) << 10) + 
-        (((instr >> 12) & 0b11111111) << 12) + 
+        (((instr >> 21) & 0b1111111111) << 1) | 
+        ((instr >> 20) << 10) | 
+        (((instr >> 12) & 0b11111111) << 12) | 
         ((instr >> 31) << 20);
     
     let imm_b = 
-        (((instr >> 8) & 0b1111) << 1) +
-        (((instr >> 25) & 0b111111) << 5) +
-        ((instr >> 7) << 11) + 
+        (((instr >> 8) & 0b1111) << 1) |
+        (((instr >> 25) & 0b111111) << 5) |
+        ((instr >> 7) << 11) | 
         ((instr >> 31) << 12);
     
     let imm_s = 
-        ((instr >> 7) & 0b11111) + (((instr >> 25) & 0b1111111) << 5);
+        ((instr >> 7) & 0b11111) |
+        (((instr >> 25) & 0b1111111) << 5);
 
     match _op {
         // RV32I
@@ -73,7 +88,7 @@ fn crack(instr: u32) -> Itype {
 }
 
 // sign extend the value in x with b bits
-fn sext(x: u32, b: usize) -> u32 {
+pub fn sext(x: u32, b: usize) -> u32 {
     if (x >> (b - 1)) & 1 == 1 {
         return (u32::MAX << b) | x as u32
     }
@@ -81,7 +96,7 @@ fn sext(x: u32, b: usize) -> u32 {
     x as u32
 }
 
-pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
+pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) -> State {
     let mut dmem: Vec<u32> = vec![0; dmem_len];
 
     loop {
@@ -89,17 +104,20 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
 
         if upc >= imem.len() {
             println!("hit end of instruction memory");
-            break;
+            return s
         }
 
-        let instr_32 = imem[upc] as u32 + 
-            (imem[upc + 1] as u32 >> 8) + 
-            (imem[upc + 2] as u32 >> 16) + 
-            (imem[upc + 3] as u32 >> 24);
+        let instr_32 = imem[upc] as u32 | 
+            ((imem[upc + 1] as u32) << 8) | 
+            ((imem[upc + 2] as u32) << 16) | 
+            ((imem[upc + 3] as u32) << 24);
         
         s.pc += 4;
 
         let itype = crack(instr_32);
+
+        //println!("instr: 0b{:b}", instr_32);
+        //println!("type: {:?}", itype);
 
         match itype {
             Itype::R {_op, rd, funct3, rs1, rs2, funct7} => {
@@ -108,28 +126,16 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
                 }
 
                 match funct3 {
-                    0b000 if funct7 == 0 => s.regs[rd] = s.regs[rs1].wrapping_add(s.regs[rs2]), // add
-                    0b000 if funct7 != 0 => s.regs[rd] = s.regs[rs1].wrapping_sub(s.regs[rs2]), // sub
-                    0b001 => s.regs[rd] = s.regs[rs1] << (s.regs[rs2] & 0b11111), // sll
-                    0b010 => {
-                        if (s.regs[rs1] as i32) < s.regs[rs2] as i32 {
-                            s.regs[rd] = 0
-                        } else {
-                            s.regs[rd] = 1
-                        }
-                    }, // slt
-                    0b011 => {
-                        if s.regs[rs1] < s.regs[rs2] {
-                            s.regs[rd] = 0
-                        } else {
-                            s.regs[rd] = 1
-                        }
-                    }, // sltu
-                    0b100 => s.regs[rd] = s.regs[rs1] ^ s.regs[rs2], // xor
-                    0b101 if funct7 == 0 => s.regs[rd] = s.regs[rs1] >> (s.regs[rs2] & 0b11111), // srl
-                    0b101 if funct7 != 0 => s.regs[rd] = (s.regs[rs1] as i32 >> (s.regs[rs2] & 0b11111) as i32) as u32, // sra
-                    0b110 => s.regs[rd] = s.regs[rs1] | s.regs[rs2], // or
-                    0b111 => s.regs[rd] = s.regs[rs1] & s.regs[rs2], // and
+                    0b000 if funct7 == 0 => add(&mut s, rs1, rs2, rd),
+                    0b000 if funct7 != 0 => sub(&mut s, rs1, rs2, rd),
+                    0b001 => sll(&mut s, rs1, rs2, rd),
+                    0b010 => slt(&mut s, rs1, rs2, rd),
+                    0b011 => sltu(&mut s, rs1, rs2, rd),
+                    0b100 => xor(&mut s, rs1, rs2, rd),
+                    0b101 if funct7 == 0 => srl(&mut s, rs1, rs2, rd),
+                    0b101 if funct7 != 0 => sra(&mut s, rs1, rs2, rd),
+                    0b110 => or(&mut s, rs1, rs2, rd),
+                    0b111 => and(&mut s, rs1, rs2, rd),
                     _ => panic!("illegal funct3 field {}", funct3)
                 }
             },
@@ -143,141 +149,69 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) {
                 match _op {
                     0b0010011 => {
                         match funct3 {
-                            0b000 => s.regs[rd] = s.regs[rs1].wrapping_add(ext_imm), // addi
-                            0b010 => {
-                                if (s.regs[rs1] as i32) < ext_imm as i32 {
-                                    s.regs[rd] = 0
-                                } else {
-                                    s.regs[rd] = 1
-                                }
-                            }, // slti
-                            0b011 => {
-                                if s.regs[rs1] < ext_imm {
-                                    s.regs[rd] = 0
-                                } else {
-                                    s.regs[rd] = 1
-                                }
-                            }, // sltiu
-                            0b100 => s.regs[rd] = s.regs[rs1] ^ ext_imm, // xori
-                            0b110 => s.regs[rd] = s.regs[rs1] | ext_imm, // ori
-                            0b111 => s.regs[rd] = s.regs[rs1] & ext_imm, // andi
-                            0b001 => s.regs[rd] = s.regs[rs1] << ext_imm, // slli
-                            0b101 if imm == 0 => s.regs[rd] = s.regs[rs1] >> ext_imm, // srli
-                            0b101 if imm != 0 => s.regs[rd] = (s.regs[rs1] as i32 >> ext_imm as i32) as u32, // srai
+                            0b000 => addi(&mut s, rs1, ext_imm, rd),
+                            0b010 => slti(&mut s, rs1, ext_imm, rd),
+                            0b011 => sltiu(&mut s, rs1, ext_imm, rd),
+                            0b100 => xori(&mut s, rs1, ext_imm, rd),
+                            0b110 => ori(&mut s, rs1, ext_imm, rd),
+                            0b111 => andi(&mut s, rs1, ext_imm, rd),
+                            0b001 => slli(&mut s, rs1, ext_imm, rd),
+                            0b101 if imm == 0 => srli(&mut s, rs1, ext_imm, rd),
+                            0b101 if imm != 0 => srai(&mut s, rs1, ext_imm, rd),
                             _ => panic!("illegal funct3 field {}", funct3)
                         }
-                    }, // immediate instruction
+                    },
                     0b0000011 => {
                         let ext_imm = sext(imm as u32, 12);
-                        let addr = (rs1 as u32 + ext_imm) as usize;
-
-                        if addr >= dmem_len {
-                            panic!("illegal memory read at address {:x}", addr)
-                        }
-
-                        if addr % (s.ialign / 8) as usize != 0 {
-                            panic!("misaligned memory access {}", addr)
-                        }
-
-                        let mut val = match funct3 {
-                            0b000 | 0b100 => dmem[addr] % u8::MAX as u32, // lb(u)
-                            0b001 | 0b101 => dmem[addr] % u16::MAX as u32, // lh(u)
-                            0b010 => dmem[addr], // lw
+                        match funct3 {
+                            0b000 => lx(&mut s, rs1, ext_imm, rd, &dmem, 8, true), // lb
+                            0b100 => lx(&mut s, rs1, ext_imm, rd, &dmem, 8, false), // lbu
+                            0b001 => lx(&mut s, rs1, ext_imm, rd, &dmem, 16, false), // lh
+                            0b101 => lx(&mut s, rs1, ext_imm, rd, &dmem, 16, true), // lhu
+                            0b010 => lx(&mut s, rs1, ext_imm, rd, &dmem, 32, false), // lw
                             _ => panic!("illegal funct3 field {}", funct3)
                         };
 
-                        // we can't move this up because exceptions still need to happen when rd is x0
-                        if rd == 0 {
-                            continue;
-                        }
-
-                        // lb and lh need sign-extension
-                        match funct3 {
-                            0b000 => val = sext(val, 8),
-                            0b001 => val = sext(val, 16),
-                            _ => (),
-                        }
-
-                        s.regs[rd] = val;
-
-                    }, // load
-                    0b1100111 => {
-                        s.regs[rd] = s.pc;
-                        s.pc += (s.regs[rs1] + sext(imm as u32, 12)) & 0xfffffffe;
-                    }, // jalr
+                    },
+                    0b1100111 => jalr(&mut s, rs1, ext_imm, rd),
                     _ => panic!("unrecognized opcode {}", _op)
                 }
             },
             Itype::S {_op, funct3, rs1, rs2, imm} => {
-                let ext_imm = if imm >> 12 & 1 == 1 { u32::MAX << 12 & imm as u32 } else { imm as u32 };
-                let addr = (rs1 as u32 + ext_imm) as usize;
-
-                if addr >= dmem_len {
-                    panic!("illegal memory write at address {:x}", addr)
-                }
-
-                if addr % (s.ialign / 8) as usize != 0 {
-                    panic!("misaligned memory access {}", addr)
-                }
-
+                let ext_imm = sext(imm as u32, 12);
                 match funct3 {
-                    0b000 => dmem[addr] = (s.regs[rs2] as u8) as u32,
-                    0b001 => dmem[addr] = (s.regs[rs2] as u16) as u32,
-                    0b010 => dmem[addr] = s.regs[rs2],
+                    0b000 => sx(&mut s, rs1, ext_imm, rs2, &mut dmem, 8),
+                    0b001 => sx(&mut s, rs1, ext_imm, rs2, &mut dmem, 16),
+                    0b010 => sx(&mut s, rs1, ext_imm, rs2, &mut dmem, 32),
                     _ => panic!("illegal funct3 field {}", funct3)
                 }
             },
             Itype::B {_op, funct3, rs1, rs2, imm} => {
-                let ext_imm = if imm >> 12 & 1 == 1 { u32::MAX << 12 & imm as u32 } else { imm as u32 };
-                let new_addr = ((s.pc - 4) as i32 + ext_imm as i32) as u32;
+                let ext_imm = sext(imm as u32, 12);
 
                 match funct3 {
-                    0b000 => {
-                        if s.regs[rs1] == s.regs[rs2] {
-                            s.pc = new_addr;
-                        }
-                    }, // beq
-                    0b001 => {
-                        if s.regs[rs1] != s.regs[rs2] {
-                            s.pc = new_addr;
-                        }
-                    }, // bne
-                    0b100 => {
-                        if (s.regs[rs1] as i32) < s.regs[rs2] as i32 {
-                            s.pc = new_addr;
-                        }
-                    }, // blt
-                    0b101 => {
-                        if s.regs[rs1] as i32 >= s.regs[rs2] as i32 {
-                            s.pc = new_addr;
-                        }
-                    }, // bge
-                    0b110 => {
-                        if s.regs[rs1] < s.regs[rs2] {
-                            s.pc = new_addr;
-                        }
-                    }, // bltu
-                    0b111 => {
-                        if s.regs[rs1] >= s.regs[rs2] {
-                            s.pc = new_addr;
-                        }
-                    }, // bgeu
+                    0b000 => beq(&mut s, rs1, rs2, ext_imm),
+                    0b001 => bne(&mut s, rs1, rs2, ext_imm),
+                    0b100 => blt(&mut s, rs1, rs2, ext_imm),
+                    0b101 => bge(&mut s, rs1, rs2, ext_imm),
+                    0b110 => bltu(&mut s, rs1, rs2, ext_imm),
+                    0b111 => bgeu(&mut s, rs1, rs2, ext_imm),
                     _ => panic!("illegal funct3 field {}", funct3)
                 }
             },
             Itype::U {_op, rd, imm} => {
                 match _op {
-                    0b0110111 => s.regs[rd] = imm << 12, // lui
-                    0b0010111 => s.regs[rd] = (s.pc - 4) + (imm << 12), // auipc
+                    0b0110111 => lui(&mut s, rd, imm),
+                    0b0010111 => auipc(&mut s, rd, imm),
                     _ => panic!("unknown op field {}", _op)
                 }
             },
-            Itype::J {_op, rd, imm} => {
-                s.regs[rd] = s.pc;
-                s.pc += sext(imm, 20) + s.pc - 4;
-            }, // jal
+            Itype::J {_op, rd, imm} => jal(&mut s, rd, imm),
             Itype::Ecall {imm} => {
-                panic!("unimplemented Ecall type instruction, imm {}", imm);
+                match imm {
+                    0 => panic!("unimplemented Ecall type instruction"),
+                    _ => panic!("unimplemented Ebreak type instruction"),
+                }
             },
         }
     }

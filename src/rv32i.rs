@@ -95,25 +95,23 @@ pub fn srai(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
 }
 
 // implements lb(u), lh(u), lw
-pub fn lx(s: &mut State, rs1: usize, ext_imm: u32, rd: usize, dmem: &[u32], len: usize, signed: bool) {
+pub fn lx(s: &mut State, rs1: usize, ext_imm: u32, rd: usize, dmem: &[u8], len: usize, signed: bool) {
     assert!(len == 8 || len == 16 || len == 32);
 
-    let addr = (rs1 as u32 + ext_imm) as usize;
+    let addr = (s.regs[rs1] + ext_imm) as usize;
 
     if addr >= dmem.len() {
-        panic!("illegal memory read at address {:x}", addr)
+        panic!("illegal memory read at byte address {:x}", addr)
     }
 
     if addr % (s.ialign / 8) as usize != 0 {
-        panic!("misaligned memory access {}", addr)
+        panic!("misaligned memory access at byte address {:x}", addr)
     }
 
-    let val = match len {
-        8 => dmem[addr] % u8::MAX as u32, // lb(u)
-        16 => dmem[addr] % u16::MAX as u32, // lh(u)
-        32 => dmem[addr], // lw
-        _ => panic!()
-    };
+    let mut val: u32 = 0;
+    for i in (0..len).step_by(8) {
+        val |= (dmem[addr + i/8] as u32) << i;
+    }
 
     // we can't move this up because exceptions still need to happen when rd is x0
     if rd == 0 {
@@ -128,24 +126,24 @@ pub fn lx(s: &mut State, rs1: usize, ext_imm: u32, rd: usize, dmem: &[u32], len:
 }
 
 // implements sb, sh, sw
-pub fn sx(s: &mut State, rs1: usize, ext_imm: u32, rs2: usize, dmem: &mut [u32], len: usize) {
+pub fn sx(s: &mut State, rs1: usize, ext_imm: u32, rs2: usize, dmem: &mut [u8], len: usize) {
     assert!(len == 8 || len == 16 || len == 32);
     
-    let addr = (rs1 as u32 + ext_imm) as usize;
+    let addr = (s.regs[rs1] + ext_imm) as usize;
+    let word_addr = addr / 4;
 
-    if addr >= dmem.len() {
-        panic!("illegal memory write at address {:x}", addr)
+    if word_addr >= dmem.len() {
+        panic!("illegal memory write at byte address {:x}", addr)
     }
 
     if addr % (s.ialign / 8) as usize != 0 {
-        panic!("misaligned memory access {}", addr)
+        panic!("misaligned memory access at byte address {:x}", addr)
     }
 
-    match len {
-        8 => dmem[addr] = (s.regs[rs2] as u8) as u32,
-        16 => dmem[addr] = (s.regs[rs2] as u16) as u32,
-        32 => dmem[addr] = s.regs[rs2],
-        _ => panic!()
+    let val = s.regs[rs2];
+
+    for i in (0..len).step_by(8) {
+        dmem[addr + i/8] = (val >> i) as u8;
     }
 }
 

@@ -96,9 +96,7 @@ pub fn sext(x: u32, b: usize) -> u32 {
     x as u32
 }
 
-pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) -> State {
-    let mut dmem: Vec<u32> = vec![0; dmem_len];
-
+pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
     loop {
         let upc = s.pc as usize;
 
@@ -164,11 +162,11 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) -> State {
                     0b0000011 => {
                         let ext_imm = sext(imm as u32, 12);
                         match funct3 {
-                            0b000 => lx(&mut s, rs1, ext_imm, rd, &dmem, 8, true), // lb
-                            0b100 => lx(&mut s, rs1, ext_imm, rd, &dmem, 8, false), // lbu
-                            0b001 => lx(&mut s, rs1, ext_imm, rd, &dmem, 16, false), // lh
-                            0b101 => lx(&mut s, rs1, ext_imm, rd, &dmem, 16, true), // lhu
-                            0b010 => lx(&mut s, rs1, ext_imm, rd, &dmem, 32, false), // lw
+                            0b000 => lx(&mut s, rs1, ext_imm, rd, dmem, 8, true), // lb
+                            0b100 => lx(&mut s, rs1, ext_imm, rd, dmem, 8, false), // lbu
+                            0b001 => lx(&mut s, rs1, ext_imm, rd, dmem, 16, false), // lh
+                            0b101 => lx(&mut s, rs1, ext_imm, rd, dmem, 16, true), // lhu
+                            0b010 => lx(&mut s, rs1, ext_imm, rd, dmem, 32, false), // lw
                             _ => panic!("illegal funct3 field {}", funct3)
                         };
 
@@ -180,9 +178,9 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem_len: usize) -> State {
             Itype::S {_op, funct3, rs1, rs2, imm} => {
                 let ext_imm = sext(imm as u32, 12);
                 match funct3 {
-                    0b000 => sx(&mut s, rs1, ext_imm, rs2, &mut dmem, 8),
-                    0b001 => sx(&mut s, rs1, ext_imm, rs2, &mut dmem, 16),
-                    0b010 => sx(&mut s, rs1, ext_imm, rs2, &mut dmem, 32),
+                    0b000 => sx(&mut s, rs1, ext_imm, rs2, dmem, 8),
+                    0b001 => sx(&mut s, rs1, ext_imm, rs2, dmem, 16),
+                    0b010 => sx(&mut s, rs1, ext_imm, rs2, dmem, 32),
                     _ => panic!("illegal funct3 field {}", funct3)
                 }
             },

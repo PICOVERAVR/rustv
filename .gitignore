@@ -1,3 +1,4 @@
 /target
 *.elf
 *.hex
+*.s

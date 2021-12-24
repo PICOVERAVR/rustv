@@ -1,7 +1,13 @@
 mod rv32i;
 use rv32i::*;
 
-// implements RV32I
+mod zifencei;
+use zifencei::*;
+
+mod config;
+use config::*;
+
+// implements rv32i
 #[derive(Debug)]
 pub struct State {
     regs: [u32; 32],
@@ -36,12 +42,8 @@ enum Itype {
     B {_op: u8, funct3: u8, rs1: usize, rs2: usize, imm: u32},
     U {_op: u8, rd: usize, imm: u32},
     J {_op: u8, rd: usize, imm: u32},
-
-    // essentially Zicsr extension
     Ecall {imm: u16},
-
-    // Zfencei extension
-    //Fence {rd: usize, rs1: usize, succ: u8, pred: u8, fm: u8},
+    Fence {_rd: usize, _rs1: usize, _succ: u8, _pred: u8, _fm: u8},
 }
 
 fn crack(instr: u32) -> Itype {
@@ -79,7 +81,7 @@ fn crack(instr: u32) -> Itype {
         0b1110011 => Itype::Ecall {imm: (instr >> 20) as u16}, // ecall - ebreak
 
         // Zfencei
-        //0b0001111 => Itype::Fence {op, rd, rs1, }, // fence
+        0b0001111 => Itype::Fence {_rd: rd, _rs1: rs1, _succ: (instr >> 20) as u8, _pred: (instr >> 24) as u8, _fm: (instr >> 28) as u8}, // fence
 
         _ => panic!("unrecognized opcode 0b{:07b}", _op)
     }
@@ -141,10 +143,6 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
                 }
             },
             Itype::I {_op, rd, funct3, rs1, imm} => {
-                if rd == 0 {
-                    continue;
-                }
-
                 let ext_imm = sext(imm, 12);
 
                 match _op {
@@ -175,6 +173,7 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
 
                     },
                     0b1100111 => jalr(&mut s, rs1, ext_imm, rd),
+                    0b0001111 if ZIFENCEI => zifence_i(&mut s, rs1, ext_imm, rd),
                     _ => panic!("unrecognized I type op field {:07b}", _op)
                 }
             },
@@ -209,11 +208,17 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
             },
             Itype::J {_op, rd, imm} => jal(&mut s, rd, imm),
             Itype::Ecall {imm} => {
-                match imm {
-                    0 => panic!("unimplemented Ecall type instruction"),
-                    _ => panic!("unimplemented Ebreak type instruction"),
+                let res = match imm {
+                    0 => ecall(&mut s),
+                    _ => ebreak(&mut s),
+                };
+
+                match res {
+                    Action::Resume => (),
+                    Action::Terminate => return s,
                 }
             },
+            Itype::Fence {_rd, _rs1, _succ, _pred, _fm} => (),
         }
     }
 }

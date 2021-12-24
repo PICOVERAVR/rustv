@@ -152,7 +152,7 @@ pub fn sx(s: &mut State, rs1: usize, ext_imm: u32, rs2: usize, dmem: &mut [u8], 
 }
 
 pub fn jalr(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
-    let add = (s.regs[rs1] as i32 + ext_imm as i32) & -2; // -2 unsigned is 0xfffffffe
+    let add = (s.regs[rs1] as i32 + ext_imm as i32) & -2; // -2 unsigned is 0b11..110
     let dest = ((s.pc - 4) as i32 + add) as u32;
 
     if dest % 4 != 0 {
@@ -186,7 +186,7 @@ pub fn bne(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
 }
 
 pub fn blt(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
-    if s.regs[rs1] < s.regs[rs2] {
+    if (s.regs[rs1] as i32) < s.regs[rs2] as i32 {
         let dest = ((s.pc - 4) as i32 + ext_imm as i32) as u32;
         if dest % 4 != 0 {
             panic!("misaligned destination byte address {:x}", dest);
@@ -197,7 +197,7 @@ pub fn blt(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
 }
 
 pub fn bge(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
-    if s.regs[rs1] >= s.regs[rs2] {
+    if (s.regs[rs1] as i32) >= s.regs[rs2] as i32 {
         let dest = ((s.pc - 4) as i32 + ext_imm as i32) as u32;
         if dest % 4 != 0 {
             panic!("misaligned destination byte address {:x}", dest);
@@ -219,7 +219,7 @@ pub fn bltu(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
 }
 
 pub fn bgeu(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
-    if s.regs[rs1] < s.regs[rs2] {
+    if s.regs[rs1] >= s.regs[rs2] {
         let dest = ((s.pc - 4) as i32 + ext_imm as i32) as u32;
         if dest % 4 != 0 {
             panic!("misaligned destination byte address {:x}", dest);
@@ -246,4 +246,18 @@ pub fn jal(s: &mut State, rd: usize, imm: u32) {
 
     s.regs[rd] = s.pc;
     s.pc = dest;
+}
+
+pub enum Action {
+    Terminate, // terminate execution
+    Resume, // resume execution
+}
+
+pub fn ecall(_s: &mut State) -> Action {
+    println!("unimplemented ecall instruction");
+    Action::Resume
+}
+
+pub fn ebreak(_s: &mut State) -> Action {
+    Action::Terminate
 }

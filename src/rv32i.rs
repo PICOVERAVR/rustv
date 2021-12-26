@@ -253,8 +253,12 @@ pub enum Action {
     Resume, // resume execution
 }
 
-pub fn ecall(_s: &mut State) -> Action {
-    println!("unimplemented ecall instruction");
+pub fn ecall(s: &mut State) -> Action {
+    match s.regs[10] {
+        0 => assert_eq!(s.regs[11], s.regs[12]),
+        _ => panic!("unknown ecall parameter in x10")
+    }
+
     Action::Resume
 }
 

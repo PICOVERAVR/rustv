@@ -13,6 +13,8 @@ pub struct State {
     regs: [u32; 32],
     pc: u32,
     //xlen: u8, // register width
+
+    ret: u64, // number of retired instructions
 }
 
 impl State {
@@ -20,6 +22,7 @@ impl State {
         State {
             regs: [0; 32],
             pc,
+            ret: 0,
         }
     }
 
@@ -72,7 +75,7 @@ fn crack(instr: u32) -> Itype {
 
     match _op {
         // RV32I
-        0b0011011 | 0b0010111 => Itype::U {_op, rd, imm: instr & 0xfffff000}, // lui, auipc
+        0b0110111 | 0b0010111 => Itype::U {_op, rd, imm: instr & 0xfffff000}, // lui, auipc
         0b1101111 => Itype::J {_op, rd, imm: imm_j}, // jal
         0b1100111 | 0b0000011 | 0b0010011 => Itype::I {_op, rd, funct3, rs1, imm: instr >> 20}, // jalr, ld, imm instructions (addi, slti, etc)
         0b1100011 => Itype::B {_op, funct3, rs1, rs2, imm: imm_b}, // beq - bgeu
@@ -101,7 +104,7 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
         let upc = s.pc as usize;
 
         if upc == imem.len() {
-            println!("reached end of instruction memory");
+            println!("reached end of instruction memory, {} instructions executed", s.ret - 1);
             return s
         }
 
@@ -114,13 +117,13 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
             ((imem[upc + 2] as u32) << 16) | 
             ((imem[upc + 3] as u32) << 24);
         
-        println!("pc 0x{:x} ({}) fetched instr 0b{:b}", s.pc, s.pc, instr_32);
+        //println!("pc 0x{:x} ({}) fetched instr 0b{:b}", s.pc, s.pc, instr_32);
         
         s.pc += 4;
 
         let itype = crack(instr_32);
 
-        println!("type: {:?}", itype);
+        //println!("type: {:?}", itype);
 
         match itype {
             Itype::R {_op, rd, funct3, rs1, rs2, funct7} => {
@@ -220,6 +223,8 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
             },
             Itype::Fence {_rd, _rs1, _succ, _pred, _fm} => (),
         }
+
+        s.ret += 1;
     }
 }
 

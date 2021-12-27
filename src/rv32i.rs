@@ -115,11 +115,6 @@ pub fn lx(s: &mut State, rs1: usize, ext_imm: u32, rd: usize, dmem: &[u8], len: 
         val |= (dmem[addr + i/8] as u32) << i;
     }
 
-    // we can't move this up because exceptions still need to happen when rd is x0
-    if rd == 0 {
-        return
-    }
-
     // lb and lh need sign-extension
     s.regs[rd] = match signed {
         true => sext(val, len),
@@ -254,14 +249,15 @@ pub enum Action {
 }
 
 pub fn ecall(s: &mut State) -> Action {
-    match s.regs[10] {
-        0 => assert_eq!(s.regs[11], s.regs[12]),
-        _ => panic!("unknown ecall parameter in x10")
+    match s.regs[8] {
+        0 => assert_eq!(s.regs[9], s.regs[18], "test {}, l: 0x{:08x}, r: 0x{:08x}", s.regs[5], s.regs[9], s.regs[18]),
+        err => panic!("unknown ecall parameter 0x{:x} in x8, pc 0x{:x}", err, s.pc - 4)
     }
 
     Action::Resume
 }
 
 pub fn ebreak(_s: &mut State) -> Action {
+    println!("hit ebreak, terminating execution");
     Action::Terminate
 }

@@ -103,11 +103,6 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
     loop {
         let upc = s.pc as usize;
 
-        if upc == imem.len() {
-            println!("reached end of instruction memory, {} instructions executed", s.ret - 1);
-            return s
-        }
-
         if upc >= imem.len() {
             panic!("exceeded instruction memory with address 0x{:x} ({})", upc, upc);
         }
@@ -224,6 +219,7 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
             Itype::Fence {_rd, _rs1, _succ, _pred, _fm} => (),
         }
 
+        s.regs[0] = 0; // reset zero register in case anything wrote to it
         s.ret += 1;
     }
 }

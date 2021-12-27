@@ -25,9 +25,9 @@
     Test_Rd_Bypass 19, 2, IMM, addi, 22, 13, 9
 
     # src bypass
-    Test_Rs_Bypass 20, 0, -1, IMM, addi, 24, 13, 11
-    Test_Rs_Bypass 21, 1, -1, IMM, addi, 23, 13, 10
-    Test_Rs_Bypass 22, 2, -1, IMM, addi, 22, 13, 9
+    Test_Rs1_Bypass 20, 0, -1, IMM, addi, 24, 13, 11
+    Test_Rs1_Bypass 21, 1, -1, IMM, addi, 23, 13, 10
+    Test_Rs1_Bypass 22, 2, -1, IMM, addi, 22, 13, 9
 
     # zero register
     Test_Rd_Zero_Imm 23, addi, 32, 32

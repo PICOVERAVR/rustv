@@ -27,18 +27,18 @@
     Test_Rd_Bypass 21, 2, REG, add, 26, 15, 11
 
     # src bypass
-    Test_Rs_Bypass 22, 0, 0, REG, add, 24, 13, 11
-    Test_Rs_Bypass 23, 0, 1, REG, add, 25, 14, 11
-    Test_Rs_Bypass 24, 0, 2, REG, add, 26, 15, 11
-    Test_Rs_Bypass 25, 1, 0, REG, add, 24, 13, 11
-    Test_Rs_Bypass 26, 1, 1, REG, add, 25, 14, 11
-    Test_Rs_Bypass 27, 2, 0, REG, add, 26, 15, 11
-    Test_Rs_Bypass 28, 0, 0, REG, add, 24, 11, 13
-    Test_Rs_Bypass 29, 0, 1, REG, add, 25, 11, 14
-    Test_Rs_Bypass 30, 0, 2, REG, add, 26, 11, 15
-    Test_Rs_Bypass 31, 1, 0, REG, add, 24, 11, 13
-    Test_Rs_Bypass 32, 1, 1, REG, add, 25, 11, 14
-    Test_Rs_Bypass 33, 2, 0, REG, add, 26, 11, 15
+    Test_Rs1_Bypass 22, 0, 0, REG, add, 24, 13, 11
+    Test_Rs1_Bypass 23, 0, 1, REG, add, 25, 14, 11
+    Test_Rs1_Bypass 24, 0, 2, REG, add, 26, 15, 11
+    Test_Rs1_Bypass 25, 1, 0, REG, add, 24, 13, 11
+    Test_Rs1_Bypass 26, 1, 1, REG, add, 25, 14, 11
+    Test_Rs1_Bypass 27, 2, 0, REG, add, 26, 15, 11
+    Test_Rs2_Bypass 28, 0, 0, add, 24, 13, 11
+    Test_Rs2_Bypass 29, 0, 1, add, 25, 14, 11
+    Test_Rs2_Bypass 30, 0, 2, add, 26, 15, 11
+    Test_Rs2_Bypass 31, 1, 0, add, 24, 13, 11
+    Test_Rs2_Bypass 32, 1, 1, add, 25, 14, 11
+    Test_Rs2_Bypass 33, 2, 0, add, 26, 15, 11
 
     # zero register
     Test_Rd_Rs1_Zero 34, add, 15, 15

@@ -60,3 +60,4 @@ dump_simple:
 
 clean:
 	@rm -f *.o
+	@rm -f testsuite.elf testsuite.hex

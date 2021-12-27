@@ -76,8 +76,10 @@
     Assert_eq t1, a3
 .endm
 
+# rs1 bypass and rs2 bypass macros are almost the same except for loading operands in the opposite order
+
 # NOTE: riscv_tests loops three times on every invocation of this test
-.macro Test_Rs_Bypass test_idx, rs1_nop_count, rs2_nop_count, imm, instr, exp_val, lval, rval
+.macro Test_Rs1_Bypass test_idx, rs1_nop_count, rs2_nop_count, imm, instr, exp_val, lval, rval
     li t0, \test_idx
 
     li a4, \exp_val
@@ -95,6 +97,25 @@
 .endr
     \instr a3, a1, a2
 .endif
+
+    Assert_eq a3, a4
+.endm
+
+# NOTE: riscv_tests loops three times on every invocation of this test
+.macro Test_Rs2_Bypass test_idx, rs1_nop_count, rs2_nop_count, instr, exp_val, lval, rval
+    li t0, \test_idx
+
+    li a4, \exp_val
+    li a2, \rval
+.rept \rs2_nop_count
+    nop
+.endr
+
+    li a1, \lval
+.rept \rs1_nop_count
+    nop
+.endr
+    \instr a3, a1, a2
 
     Assert_eq a3, a4
 .endm

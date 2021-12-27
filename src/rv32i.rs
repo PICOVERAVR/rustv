@@ -258,6 +258,6 @@ pub fn ecall(s: &mut State) -> Action {
 }
 
 pub fn ebreak(_s: &mut State) -> Action {
-    println!("hit ebreak, terminating execution");
+    println!("terminating execution ({} instructions executed)", _s.ret);
     Action::Terminate
 }

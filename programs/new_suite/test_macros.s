@@ -137,10 +137,10 @@
     Assert_eq a1, a2
 .endm
 
-.macro Test_Zero_Rs1_Rs2 test_idx, imm, instr, exp_val, lval, rval
+.macro Test_Zero_Rs1_Rs2 test_idx, imm, instr, lval, rval
     li t0, \test_idx
 
-    li a3, \exp_val
+    li a3, 0
     li a1, \lval
 .if \imm
     \instr zero, a1, \rval

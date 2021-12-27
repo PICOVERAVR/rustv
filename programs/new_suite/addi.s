@@ -19,7 +19,7 @@
     # shared src/dst
     Test_Rs1_Rs1_Rs2 16, IMM, addi, 24, 13, 11
 
-    # dest bypass
+    # dst bypass
     Test_Rd_Bypass 17, 0, IMM, addi, 24, 13, 11
     Test_Rd_Bypass 18, 1, IMM, addi, 23, 13, 10
     Test_Rd_Bypass 19, 2, IMM, addi, 22, 13, 9
@@ -31,5 +31,5 @@
 
     # zero register
     Test_Rd_Zero_Imm 23, addi, 32, 32
-    Test_Zero_Rs1_Rs2 24, IMM, addi, 0, 33, 50
+    Test_Zero_Rs1_Rs2 24, IMM, addi, 33, 50
 .endm

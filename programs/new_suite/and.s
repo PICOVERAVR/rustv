@@ -10,7 +10,7 @@
     Test_Rs2_Rs1_Rs2 6, and, 0x00f000f0, 0x0ff00ff0, 0xf0f0f0f0
     Test_Rs1_Rs1_Rs1 7, and, 0xff00ff00, 0xff00ff00
 
-    # dest bypass
+    # dst bypass
     Test_Rd_Bypass 8, 0, REG, and, 0x0f000f00, 0xff00ff00, 0x0f0f0f0f
     Test_Rd_Bypass 9, 1, REG, and, 0x00f000f0, 0x0ff00ff0, 0xf0f0f0f0
     Test_Rd_Bypass 10, 2, REG, and, 0x000f000f, 0x00ff00ff, 0x0f0f0f0f
@@ -33,5 +33,5 @@
     Test_Rd_Rs1_Zero 23, and, 0, 0xff00ff00
     Test_Rd_Zero_Rs2 24, and, 0, 0x00ff00ff
     Test_Rd_Zero_Zero 25, and, 0
-    Test_Zero_Rs1_Rs2 26, REG, and, 0, 0x11111111, 0x22222222
+    Test_Zero_Rs1_Rs2 26, REG, and, 0x11111111, 0x22222222
 .endm

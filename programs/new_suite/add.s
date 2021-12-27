@@ -21,7 +21,7 @@
     Test_Rs2_Rs1_Rs2 17, add, 25, 14, 11
     Test_Rs1_Rs1_Rs1 18, add, 26, 13
 
-    # dest bypass
+    # dst bypass
     Test_Rd_Bypass 19, 0, REG, add, 24, 13, 11
     Test_Rd_Bypass 20, 1, REG, add, 25, 14, 11
     Test_Rd_Bypass 21, 2, REG, add, 26, 15, 11
@@ -44,6 +44,6 @@
     Test_Rd_Rs1_Zero 34, add, 15, 15
     Test_Rd_Zero_Rs2 35, add, 32, 32
     Test_Rd_Zero_Zero 36, add, 0
-    Test_Zero_Rs1_Rs2 37, REG, add, 0, 16, 30
+    Test_Zero_Rs1_Rs2 37, REG, add, 16, 30
     
 .endm

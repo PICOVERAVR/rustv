@@ -91,7 +91,9 @@ pub fn srli(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
 }
 
 pub fn srai(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
-    s.regs[rd] = (s.regs[rs1] as i32 >> ext_imm as i32) as u32
+    // need to mask off high bits of ext_imm since only the lower 5 
+    // are used and the 10th bit is set to 1
+    s.regs[rd] = (s.regs[rs1] as i32 >> (ext_imm & 0b11111) as i32) as u32
 }
 
 // implements lb(u), lh(u), lw

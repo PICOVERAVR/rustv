@@ -112,6 +112,8 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
             ((imem[upc + 2] as u32) << 16) | 
             ((imem[upc + 3] as u32) << 24);
         
+        assert_eq!(s.regs[0], 0);
+        
         //println!("pc 0x{:x} ({}) fetched instr 0b{:b}", s.pc, s.pc, instr_32);
         
         s.pc += 4;
@@ -153,8 +155,8 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
                             0b110 => ori(&mut s, rs1, ext_imm, rd),
                             0b111 => andi(&mut s, rs1, ext_imm, rd),
                             0b001 => slli(&mut s, rs1, ext_imm, rd),
-                            0b101 if imm == 0 => srli(&mut s, rs1, ext_imm, rd),
-                            0b101 if imm != 0 => srai(&mut s, rs1, ext_imm, rd),
+                            0b101 if imm >> 10 == 0 => srli(&mut s, rs1, ext_imm, rd),
+                            0b101 if imm >> 10 != 0 => srai(&mut s, rs1, ext_imm, rd),
                             _ => panic!("unrecognized funct3 field {:03b}", funct3)
                         }
                     },

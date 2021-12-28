@@ -16,6 +16,13 @@ _start:
     ori_tests
     xor_tests
     xori_tests
+    sll_tests
+    slli_tests
+    srl_tests
+    srli_tests
+    sra_tests
+    srai_tests
+    lui_tests
 
     Stop
     

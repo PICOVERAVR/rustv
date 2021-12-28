@@ -1,5 +1,7 @@
 .include "port_macros.s"
 
+# arithmetic instruction macros
+
 .equiv REG, 0
 .equiv IMM, 1
 

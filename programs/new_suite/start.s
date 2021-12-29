@@ -23,6 +23,7 @@ _start:
     sra_tests
     srai_tests
     lui_tests
+    auipc_tests
 
     Stop
     

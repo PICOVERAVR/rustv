@@ -226,12 +226,12 @@ pub fn bgeu(s: &mut State, rs1: usize, rs2: usize, ext_imm: u32) {
     }
 }
 
-pub fn lui(s: &mut State, rd: usize, imm: u32) {
-    s.regs[rd] = imm
+pub fn lui(s: &mut State, rd: usize, upper_imm: u32) {
+    s.regs[rd] = upper_imm
 }
 
-pub fn auipc(s: &mut State, rd: usize, imm: u32) {
-    s.regs[rd] = (s.pc - 4) + imm
+pub fn auipc(s: &mut State, rd: usize, upper_imm: u32) {
+    s.regs[rd] = (s.pc - 4) + upper_imm
 }
 
 pub fn jal(s: &mut State, rd: usize, imm: u32) {

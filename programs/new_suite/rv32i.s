@@ -14,3 +14,4 @@
 .include "sra.s"
 .include "srai.s"
 .include "lui.s"
+.include "auipc.s"

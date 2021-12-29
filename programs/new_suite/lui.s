@@ -1,24 +1,15 @@
 .macro lui_tests
-    # NOTE: these tests differ somewhat from riscv_tests!
+    Test_Val lui, logic_1, 0x00000000, "lui a1, 0x00000"
+    Test_Val lui, logic_2, 0x00005000, "lui a1, 0x00005"
+    Test_Val lui, logic_3, 0xfffff000, "lui a1, 0xfffff"
+    Test_Val lui, logic_4, 0x00000000, "li a1, 0x00000fff; lui a1, 0x00000"
+    Test_Val lui, logic_5, 0x7fffe000, "li a1, 0x0abcd8fe; lui a1, 0x7fffe"
+    Test_Val lui, logic_6, 0xbbbbb000, "li a1, 0xaaaaa000; lui a1, 0xbbbbb"
+    Test_Val lui, logic_7, 0x8ffff000, "lui a1, 0x8ffff"
 
-    # TODO: need a generic macro here...
-    # Test_Seq 1, IMM, lui, 0x00000000, 0x00000000, 0x00000
-    # Test_Seq 2, IMM, lui, 0xfffff000, 0x00000000, 0xfffff
-    # Test_Seq 3, IMM, lui, 0x00000fff, 0x00000fff, 0x0
-    # Test_Seq 4, IMM, lui, 0xffffffff, 0x00000fff, 0xfffff
-    # Test_Seq 5, IMM, lui, 0x7fffe7fe, 0x000007fe, 0x7fffe
-    # Test_Seq 6, IMM, lui, 0x8ffff800, 0x00000800, 0x8ffff
-    # Test_Seq 7, IMM, lui, 0x00005800, 0x00000800, 0x00005
+    Test_Val lui, dst_byp_1, 0x7fffe000, "lui a2, 0x7fffe; mv a1, a2"
+    Test_Val lui, dst_byp_2, 0x7aaae000, "lui a2, 0x7aaae; nop; mv a1, a2"
+    Test_Val lui, dst_byp_3, 0x7bbbe000, "lui a2, 0x7bbbe; nop; nop; mv a1, a2"
 
-    # shared src/dst??
-    # Test_Rs1 8, IMM, lui, 0x0a005800, 0x00000800, 0x0a005
-
-    # # dst bypass??
-    # Test_Rd_Bypass 8, 0, IMM, lui, 0x00005800, 0x00000800, 0x00005
-    # Test_Rd_Bypass 9, 1, IMM, lui, 0x000100f0, 0x000000f0, 0x00010
-    # Test_Rd_Bypass 10, 2, IMM, lui, 0x00015045, 0x00000045, 0x00015
-
-    # # zero register
-    # Test_Rd_Zero_Imm 6, lui, 0xfafdd000, 0xfafdd
-    # Test_Zero 5, IMM, lui, 0, 0x00000000, 0x80000
+    Test_Val lui, zero_1, 0, "lui zero, 0xbbbbb; mv a1, zero"
 .endm

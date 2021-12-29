@@ -23,7 +23,7 @@ BSS_ADDR := 0x1000
 # initialized data starts here
 DATA_ADDR := 0x0
 
-# emulate the "elf32lriscv" linker by default and do not link against shared libraries
+# linker flags
 LFLAGS := -m$(LINK_ABI) -static -Ttext $(TEXT_ADDR) -Tbss $(BSS_ADDR) -Tdata $(DATA_ADDR)
 
 .PHONY: dump dump_simple single testsuite pre

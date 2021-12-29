@@ -19,11 +19,11 @@
 # optional macros
 
 # print the string pointed to by reg
-.macro Print str
-    li s0, Ecall_print
-    la s1, str_\@
-    ecall
-.data
-str_\@:
-    .asciz "\str"
-.endm
+# .macro Print str
+#     li s0, Ecall_print
+#     la s1, str_\@
+#     ecall
+# .data
+# str_\@:
+#     .asciz "\str"
+# .endm

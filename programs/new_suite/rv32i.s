@@ -15,3 +15,4 @@
 .include "srai.s"
 .include "lui.s"
 .include "auipc.s"
+.include "lb_sb.s"

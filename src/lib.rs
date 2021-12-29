@@ -165,8 +165,8 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
                         match funct3 {
                             0b000 => lx(&mut s, rs1, ext_imm, rd, dmem, 8, true), // lb
                             0b100 => lx(&mut s, rs1, ext_imm, rd, dmem, 8, false), // lbu
-                            0b001 => lx(&mut s, rs1, ext_imm, rd, dmem, 16, false), // lh
-                            0b101 => lx(&mut s, rs1, ext_imm, rd, dmem, 16, true), // lhu
+                            0b001 => lx(&mut s, rs1, ext_imm, rd, dmem, 16, true), // lh
+                            0b101 => lx(&mut s, rs1, ext_imm, rd, dmem, 16, false), // lhu
                             0b010 => lx(&mut s, rs1, ext_imm, rd, dmem, 32, false), // lw
                             _ => panic!("unrecognized funct3 field {:03b}", funct3)
                         };

@@ -2,6 +2,19 @@
 
 # generic code macros
 
+# gives a useful symbol name to a test case (helpful when looking at assembly)
+.macro Test_Setup suite, test
+\suite\()_\test:
+    li t0, \@
+
+    # clear registers from previous test
+    li a0, 0
+    li a1, 0
+    li a2, 0
+    li a3, 0
+    li a4, 0
+.endm
+
 # Test_Val runs a section of code and compares the value in a1 to exp_val.
 # The test number is stored in t0 and is included for debugging purposes.
 
@@ -33,12 +46,6 @@
 
     \code
     Assert_eq a0, a1
-.endm
-
-# gives a useful symbol name to a test case (helpful when looking at assembly)
-.macro Test_Setup suite, test
-    li t0, \@
-\suite\()_\test:
 .endm
 
 # arithmetic instruction macros
@@ -115,8 +122,7 @@
 .endr
     addi t1, a3, 0
 
-    Assert_eq a3, a4
-    Assert_eq t1, a3
+    Assert_eq t1, a4
 .endm
 
 # rs1 bypass and rs2 bypass macros are almost the same except for loading operands in the opposite order
@@ -215,4 +221,106 @@
 
     # can catch cases where zero register can be written with nonzero values
     Assert_eq a3, zero
+.endm
+
+# load/store macros
+
+.macro Test_Seq_St suite, test, instr, st_val, offset, base_addr
+    Test_Setup \suite, \test
+
+    la a1, \base_addr
+    li a2, \st_val
+
+    \instr a2, \offset\()(a1)
+.endm
+
+.macro Test_Ld suite, test, instr, exp_val, offset, base_addr
+    Test_Setup \suite, \test
+
+    li a3, \exp_val
+    la a1, \base_addr
+
+    \instr a2, \offset\()(a1)
+
+    Assert_eq a2, a3
+.endm
+
+.macro Test_St_Ld suite, test, ld_instr, st_instr, start_val, exp_val, offset, base_addr
+    Test_Setup \suite, \test
+    
+    li a3, \exp_val
+    la a1, \base_addr
+    li a2, \start_val
+
+    \st_instr a2, \offset\()(a1)
+    \ld_instr a2, \offset\()(a1)
+
+    Assert_eq a2, a3
+.endm
+
+.macro Test_Ld_Rd_Bypass suite, test, nop_count, instr, exp_val, offset, base_addr
+    Test_Setup \suite, \test
+
+    li a3, \exp_val
+    la a1, \base_addr
+    \instr a2, \offset\()(a1)
+.rept \nop_count
+    # repeat for nop_count iterations
+    nop
+.endr
+    addi t1, a2, 0
+
+    Assert_eq t1, a3
+.endm
+
+.macro Test_Ld_Rs_Bypass suite, test, nop_count, instr, exp_val, offset, base_addr
+    Test_Setup \suite, \test
+
+    li a3, \exp_val
+    la a1, \base_addr
+.rept \nop_count
+    # repeat for nop_count iterations
+    nop
+.endr
+    \instr a2, \offset\()(a1)
+
+    Assert_eq a2, a3
+.endm
+
+.macro Test_St_Val_Addr_Bypass suite, test, src1_nops, src2_nops, ld_instr, st_instr, exp_val, offset, base_addr
+    Test_Setup \suite, \test
+
+    li a3, \exp_val
+    li a2, \exp_val
+.rept \src1_nops
+    # repeat for src1_nops iterations
+    nop
+.endr
+    la a1, \base_addr
+.rept \src2_nops
+    nop
+.endr
+    \st_instr a2, \offset\()(a1)
+    \ld_instr a2, \offset\()(a1)
+
+    Assert_eq a2, a3
+.endm
+
+.macro Test_St_Addr_Val_Bypass suite, test, src1_nops, src2_nops, ld_instr, st_instr, exp_val, offset, base_addr
+    Test_Setup \suite, \test
+
+    li a3, \exp_val
+    la a1, \base_addr
+.rept \src1_nops
+    # repeat for src1_nops iterations
+    nop
+.endr
+    li a2, \exp_val
+.rept \src2_nops
+    nop
+.endr
+    \st_instr a2, \offset\()(a1)
+    \ld_instr a2, \offset\()(a1)
+
+    Assert_eq a2, a3
 .endm

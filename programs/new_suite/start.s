@@ -1,5 +1,7 @@
 .include "test_macros.s"
 
+.include "sanity_tests.s"
+
 # use tests for all rv32i instructions
 .include "rv32i.s"
 
@@ -7,23 +9,38 @@
 .global _start
 _start:
 
-    add_tests
-    addi_tests
-    sub_tests
-    and_tests
-    andi_tests
-    or_tests
-    ori_tests
-    xor_tests
-    xori_tests
-    sll_tests
-    slli_tests
-    srl_tests
-    srli_tests
-    sra_tests
-    srai_tests
-    lui_tests
-    auipc_tests
+    # quick sanity tests to check that lui, add, addi, and Assert_eq are all working
+    # check these tests carefully, as the tests below assume these instructions function correctly!
+    # sanity_tests
+
+    # # arithmetic tests
+    # lui_tests
+    # add_tests
+    # addi_tests
+
+    # sub_tests
+    # and_tests
+    # andi_tests
+    # or_tests
+    # ori_tests
+    # xor_tests
+    # xori_tests
+    # sll_tests
+    # slli_tests
+    # srl_tests
+    # srli_tests
+    # sra_tests
+    # srai_tests
+    # auipc_tests
+
+    # load/store tests
+    lb_sb_tests
+
+    # TODO: need linker script for jump tests!
 
     Stop
-    
+
+# space for testing load and store instructions
+.data
+test_data:
+    .fill 64

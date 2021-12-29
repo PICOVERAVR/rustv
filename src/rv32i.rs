@@ -100,7 +100,8 @@ pub fn srai(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
 pub fn lx(s: &mut State, rs1: usize, ext_imm: u32, rd: usize, dmem: &[u8], len: usize, signed: bool) {
     assert!(len == 8 || len == 16 || len == 32);
 
-    let addr = (s.regs[rs1] + ext_imm) as usize;
+    // wrapping add to handle negative immediates
+    let addr = (s.regs[rs1].wrapping_add(ext_imm)) as usize;
 
     if addr >= dmem.len() {
         panic!("illegal memory read at byte address {:x}", addr)
@@ -128,7 +129,8 @@ pub fn lx(s: &mut State, rs1: usize, ext_imm: u32, rd: usize, dmem: &[u8], len: 
 pub fn sx(s: &mut State, rs1: usize, ext_imm: u32, rs2: usize, dmem: &mut [u8], len: usize) {
     assert!(len == 8 || len == 16 || len == 32);
     
-    let addr = (s.regs[rs1] + ext_imm) as usize;
+    // wrapping add to handle negative immediates
+    let addr = (s.regs[rs1].wrapping_add(ext_imm)) as usize;
     let word_addr = addr / 4;
 
     if word_addr >= dmem.len() {

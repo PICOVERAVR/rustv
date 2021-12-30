@@ -16,3 +16,4 @@
 .include "lui.s"
 .include "auipc.s"
 .include "lb_sb.s"
+.include "lw_sw.s"

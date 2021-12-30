@@ -35,6 +35,7 @@ _start:
 
     # load/store tests
     lb_sb_tests
+    lw_sw_tests
 
     # TODO: need linker script for jump tests!
 

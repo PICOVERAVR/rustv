@@ -43,9 +43,6 @@
     Test_Seq_St sb, store_pre_11, sb, 0xef, 0, test_data+6
     Test_Seq_St sb, store_pre_12, sb, 0xef, 0, test_data+7
     Test_Seq_St sb, store_pre_13, sb, 0xef, 0, test_data+8
-    Test_Seq_St sb, store_pre_14, sb, 0xef, 0, test_data+9
-    Test_Seq_St sb, store_pre_15, sb, 0xef, 0, test_data+10
-    Test_Seq_St sb, store_pre_16, sb, 0xef, 0, test_data+11
 
     Test_St_Ld sb, store_1, lb, sb, 0xffffffaa, 0xffffffaa, 0, test_data
     Test_St_Ld sb, store_2, lb, sb, 0x00000000, 0x00000000, 1, test_data
@@ -66,10 +63,10 @@
     Test_St_Val_Addr_Bypass sb, src_byp_4, 1, 0, lb, sb, 0xffffffbc, 3, test_data
     Test_St_Val_Addr_Bypass sb, src_byp_5, 1, 1, lb, sb, 0xffffffbb, 4, test_data
     Test_St_Val_Addr_Bypass sb, src_byp_6, 2, 0, lb, sb, 0xffffffab, 5, test_data
-    Test_St_Val_Addr_Bypass sb, src_byp_7, 0, 0, lb, sb, 0x33, 0, test_data
-    Test_St_Val_Addr_Bypass sb, src_byp_8, 0, 1, lb, sb, 0x23, 1, test_data
-    Test_St_Val_Addr_Bypass sb, src_byp_9, 0, 2, lb, sb, 0x22, 2, test_data
-    Test_St_Val_Addr_Bypass sb, src_byp_10, 1, 0, lb, sb, 0x12, 3, test_data
-    Test_St_Val_Addr_Bypass sb, src_byp_11, 1, 1, lb, sb, 0x11, 4, test_data
-    Test_St_Val_Addr_Bypass sb, src_byp_12, 2, 0, lb, sb, 0x01, 5, test_data
+    Test_St_Addr_Val_Bypass sb, src_byp_7, 0, 0, lb, sb, 0x33, 0, test_data
+    Test_St_Addr_Val_Bypass sb, src_byp_8, 0, 1, lb, sb, 0x23, 1, test_data
+    Test_St_Addr_Val_Bypass sb, src_byp_9, 0, 2, lb, sb, 0x22, 2, test_data
+    Test_St_Addr_Val_Bypass sb, src_byp_10, 1, 0, lb, sb, 0x12, 3, test_data
+    Test_St_Addr_Val_Bypass sb, src_byp_11, 1, 1, lb, sb, 0x11, 4, test_data
+    Test_St_Addr_Val_Bypass sb, src_byp_12, 2, 0, lb, sb, 0x01, 5, test_data
 .endm

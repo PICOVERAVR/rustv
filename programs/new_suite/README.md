@@ -43,4 +43,6 @@ TODO once test suite is done and error messages are implemented
 
  - sltiu tests (riscv-tests only has one!)
  - error messages using port macros
+ - make sure no tests depend on zero-initialized registers
+ - strip out unnecessary zero-initialization?
  

@@ -40,6 +40,8 @@ _start:
     # lbu_tests
     # lw_sw_tests
 
+    beq_tests
+
     # TODO: need linker script for jump tests!
 
     Stop

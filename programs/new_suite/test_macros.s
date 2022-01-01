@@ -324,3 +324,36 @@
 
     Assert_eq a2, a3
 .endm
+
+# branch macros
+
+.macro Test_Branch_Taken suite, test, instr, lval, rval
+    Test_Setup \suite, \test
+
+    li a1, \lval
+    li a2, \rval
+    \instr a1, a2, 2f
+    addi a3, zero, 1
+1:  \instr a1, a2, 3f
+    addi a3, zero, 1
+2:  \instr a1, a2, 1b
+    addi a3, zero, 1
+3:  Assert_eq a3, zero
+.endm
+
+.macro Test_Branch_Not_Taken suite, test, instr, lval, rval
+    Test_Setup \suite, \test
+
+    li a3, 0
+1:  Assert_eq zero, a3
+    li a3, 1
+    li a4, 2
+
+    li a1, \lval
+    li a2, \rval
+    \instr a1, a2, 1b
+    \instr a1, a2, 2f
+    nop
+    li a3, 2
+2:  Assert_eq a3, a4
+.endm

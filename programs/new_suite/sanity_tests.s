@@ -22,4 +22,7 @@
     addi a1, a1, -2 # 0xfff
     Assert_eq a0, a1
 
+    addi a0, zero, 1
+    Assert_eq a0, a0 # check if a register can be compared to itself
+
 .endm

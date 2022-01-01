@@ -17,6 +17,9 @@
 .include "slti.s"
 .include "lui.s"
 .include "auipc.s"
+
+.include "beq.s"
+
 .include "lb_sb.s"
 .include "lbu.s"
 .include "lw_sw.s"

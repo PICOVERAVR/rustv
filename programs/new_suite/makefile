@@ -1,5 +1,3 @@
-# NOTE: anything in the "exclude" directory will not get assembled,
-# so tests that will not assemble due to architecture limitations can be excluded
 TEST_SRC := $(wildcard *.s)
 TEST_OBJ := $(notdir $(patsubst %.s,%.o,$(TEST_SRC)))
 TOOLCHAIN := riscv64-elf
@@ -11,7 +9,7 @@ ARCH := rv32i
 # set the abi to use (use ilp32 for 32-bit processors and lp64 for 64-bit processors)
 ABI := ilp32
 
-# ABI to specify for the linker
+# default linker script to use
 LINK_ABI := elf32lriscv
 
 # initialized data starts here
@@ -26,12 +24,12 @@ TEXT_ADDR := 0x100
 # linker flags
 LFLAGS := -m$(LINK_ABI) -static -Ttext $(TEXT_ADDR) -Tbss $(BSS_ADDR) -Tdata $(DATA_ADDR)
 
-.PHONY: dump dump_simple single testsuite pre
+.PHONY: dump dump_simple single $(BINARY) pre
 
 # builds the entire test suite
 # compilation and linking passes are split up to give better error messages
 # NOTE: the .bss and .data sections are _not_ built into the .hex file (this can be done by removing the flag "--only-section=.text")
-testsuite: pre $(TEST_OBJ)
+$(BINARY): pre $(TEST_OBJ)
 	@$(TOOLCHAIN)-ld $(LFLAGS) $(TEST_OBJ) -o $(BINARY).elf
 	@$(TOOLCHAIN)-objcopy --only-section=.text $(BINARY).elf $(BINARY).hex --output-target=binary
 	@echo "build completed successfully"
@@ -46,14 +44,14 @@ pre:
 
 # disassemble the test suite .elf using high-level register names (a0, a1, etc), pseudoinstructions,
 # and colored arrows to indicate jump directions
-dump:
+dump: $(BINARY)
 	@$(TOOLCHAIN)-objdump -d \
 		--line-numbers \
 		--visualize-jumps=extended-color \
 		$(BINARY).elf | tail +8
 
 # disassemble the test suite .elf using actual register names (x1, x2, etc) and actual instructions
-dump_simple:
+dump_simple: $(BINARY)
 	@$(TOOLCHAIN)-objdump -d \
 		--line-numbers \
 		-Mno-aliases,numeric \
@@ -61,4 +59,4 @@ dump_simple:
 
 clean:
 	@rm -f *.o
-	@rm -f testsuite.elf testsuite.hex
+	@rm -f $(BINARY).elf $(BINARY).hex

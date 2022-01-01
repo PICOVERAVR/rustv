@@ -10,11 +10,12 @@
 _start:
 
     # quick sanity tests to check that lui, add, addi, and Assert_eq are all working
-    # check these tests carefully, as the tests below assume these instructions function correctly!
+    # NOTE: check these tests carefully, as the tests below assume these instructions function correctly!
     # sanity_tests
 
     # # arithmetic tests
     # lui_tests
+    # auipc_tests
     # add_tests
     # addi_tests
 
@@ -31,11 +32,13 @@ _start:
     # srli_tests
     # sra_tests
     # srai_tests
-    # auipc_tests
+    # slt_tests
+    # slti_sltiu_tests
 
     # load/store tests
-    lb_sb_tests
-    lw_sw_tests
+    # lb_sb_tests
+    # lbu_tests
+    # lw_sw_tests
 
     # TODO: need linker script for jump tests!
 

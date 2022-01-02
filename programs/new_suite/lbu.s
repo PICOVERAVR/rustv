@@ -1,8 +1,8 @@
 .macro lbu_tests
-    Test_Seq_St sb, store_pre_1, sb, 0xff, 0, test_data
-    Test_Seq_St sb, store_pre_2, sb, 0x00, 0, test_data+1
-    Test_Seq_St sb, store_pre_3, sb, 0xf0, 0, test_data+2
-    Test_Seq_St sb, store_pre_4, sb, 0x0f, 0, test_data+3
+    Test_Seq_St sb, ustore_pre_1, sb, 0xff, 0, test_data
+    Test_Seq_St sb, ustore_pre_2, sb, 0x00, 0, test_data+1
+    Test_Seq_St sb, ustore_pre_3, sb, 0xf0, 0, test_data+2
+    Test_Seq_St sb, ustore_pre_4, sb, 0x0f, 0, test_data+3
 
     Test_Ld lbu, load_1, lbu, 0x000000ff, 0, test_data
     Test_Ld lbu, load_2, lbu, 0x00000000, 1, test_data

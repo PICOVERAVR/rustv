@@ -357,3 +357,39 @@
     li a3, 2
 2:  Assert_eq a3, a4
 .endm
+
+.macro Test_Branch_Not_Taken_Rs1_Bypass suite, test, src1_nops, src2_nops, instr, lval, rval
+    Test_Setup \suite, \test
+
+    li a3, 1
+    li a1, \lval
+.rept \src1_nops
+    # repeat for src1_nops iterations
+    nop
+.endr
+    li a2, \rval
+.rept \src2_nops
+    nop
+.endr
+    \instr a1, a2, 1f
+    li a3, 0
+1:  Assert_eq zero, a3
+.endm
+
+.macro Test_Branch_Not_Taken_Rs2_Bypass suite, test, src1_nops, src2_nops, instr, lval, rval
+    Test_Setup \suite, \test
+
+    li a3, 1
+    li a2, \rval
+.rept \src1_nops
+    # repeat for src1_nops iterations
+    nop
+.endr
+    li a1, \lval
+.rept \src2_nops
+    nop
+.endr
+    \instr a1, a2, 1f
+    li a3, 0
+1:  Assert_eq zero, a3
+.endm

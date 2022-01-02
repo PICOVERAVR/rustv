@@ -19,7 +19,14 @@
 .include "auipc.s"
 
 .include "beq.s"
+.include "bne.s"
+.include "blt.s"
+.include "bltu.s"
+.include "bge.s"
+.include "bgeu.s"
 
 .include "lb_sb.s"
 .include "lbu.s"
+.include "lh_sh.s"
+.include "lhu.s"
 .include "lw_sw.s"

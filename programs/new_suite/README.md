@@ -6,6 +6,7 @@ Minv isn't designed to be a complete verification suite, as these already exist.
 
 ## Features
  - Extensive test suite for all RV32I instructions
+   - Fixes bugs present in the base `riscv-tests` test suite
  - Uses only a small subset of the base RV32I instruction set for all tests (see the Required Pseudoinstructions section for details)
  - Contains bypass tests for traditional 5-stage pipelines
  - Easy to use and port
@@ -45,4 +46,6 @@ TODO once test suite is done and error messages are implemented
  - error messages using port macros
  - make sure no tests depend on zero-initialized registers
  - strip out unnecessary zero-initialization?
+ - test misaligned accesses to memory if EEI allows it
+ - check unaligned mem tests, two variants used?
  

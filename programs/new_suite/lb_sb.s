@@ -42,7 +42,6 @@
     Test_Seq_St sb, store_pre_10, sb, 0xef, 0, test_data+5
     Test_Seq_St sb, store_pre_11, sb, 0xef, 0, test_data+6
     Test_Seq_St sb, store_pre_12, sb, 0xef, 0, test_data+7
-    Test_Seq_St sb, store_pre_13, sb, 0xef, 0, test_data+8
 
     Test_St_Ld sb, store_1, lb, sb, 0xffffffaa, 0xffffffaa, 0, test_data
     Test_St_Ld sb, store_2, lb, sb, 0x00000000, 0x00000000, 1, test_data

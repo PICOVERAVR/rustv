@@ -24,6 +24,8 @@
 .include "bltu.s"
 .include "bge.s"
 .include "bgeu.s"
+.include "jal.s"
+.include "jalr.s"
 
 .include "lb_sb.s"
 .include "lbu.s"

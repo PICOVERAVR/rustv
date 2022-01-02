@@ -48,4 +48,5 @@ TODO once test suite is done and error messages are implemented
  - strip out unnecessary zero-initialization?
  - test misaligned accesses to memory if EEI allows it
  - check unaligned mem tests, two variants used?
+ - more use of Assert_ne in obvious failure cases
  

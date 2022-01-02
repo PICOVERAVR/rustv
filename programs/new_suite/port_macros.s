@@ -1,5 +1,4 @@
 .equiv Ecall_assert_eq, 0
-.equiv Ecall_assert_ne, 1
 .equiv Ecall_print, 2
 
 # required macros
@@ -7,14 +6,6 @@
 # checks if registers l and r are equal and terminates execution if they aren't
 .macro Assert_eq lreg, rreg
     li s0, Ecall_assert_eq
-    mv s1, \lreg
-    mv s2, \rreg
-    ecall
-.endm
-
-# checks if registers l and r are different and terminates execution if they aren't
-.macro Assert_ne lreg, rreg
-    li s0, Ecall_assert_ne
     mv s1, \lreg
     mv s2, \rreg
     ecall

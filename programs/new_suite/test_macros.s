@@ -393,3 +393,23 @@
     li a3, 0
 1:  Assert_eq zero, a3
 .endm
+
+# jump macros
+
+.macro Test_Jalr_Rs_Bypass suite, test, nops
+    Test_Setup \suite, \test
+    li a1, 12
+    li a0, 0
+.rept \nops
+    nop
+.endr
+jalr_rs_byp_addr_\@:
+    jalr ra, a1, 0
+    addi a0, a0, 1
+    addi a0, a0, 1
+
+1:  la a2, jalr_rs_byp_addr_\@
+    addi a2, a2, 4
+    Assert_eq ra, a2
+    Assert_eq a0, zero
+.endm

@@ -41,7 +41,7 @@ _start:
     # lh_sh_tests
     # lhu_tests
     # lw_sw_tests
-    # jal_tests
+    jal_tests
     jalr_tests
 
     # beq_tests

@@ -151,8 +151,7 @@ pub fn sx(s: &mut State, rs1: usize, ext_imm: u32, rs2: usize, dmem: &mut [u8], 
 }
 
 pub fn jalr(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
-    let add = (s.regs[rs1] as i32 + ext_imm as i32) & -2; // -2 unsigned is 0b11..110
-    let dest = ((s.pc - 4) as i32 + add) as u32;
+    let dest = ((s.regs[rs1] as i32 + ext_imm as i32) & -2) as u32; // -2 unsigned is 0b11..110
 
     if dest % 4 != 0 {
         panic!("misaligned destination byte address {:x}", dest);
@@ -255,6 +254,7 @@ pub enum Action {
 pub fn ecall(s: &mut State) -> Action {
     match s.regs[8] {
         0 => assert_eq!(s.regs[9], s.regs[18], "test {}, l: 0x{:08x}, r: 0x{:08x}", s.regs[5], s.regs[9], s.regs[18]),
+        1 => print!("{}", s.regs[9] as u8 as char),
         err => panic!("unknown ecall parameter 0x{:x} in x8, pc 0x{:x}", err, s.pc - 4)
     }
 
@@ -262,6 +262,5 @@ pub fn ecall(s: &mut State) -> Action {
 }
 
 pub fn ebreak(_s: &mut State) -> Action {
-    println!("terminating execution ({} instructions executed)", _s.ret);
     Action::Terminate
 }

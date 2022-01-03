@@ -9,24 +9,36 @@ A simple RISC-V software emulator written in Rust.
 - TODO: rv64i
 - TODO: M
 
-# Example usage
+# Performance
+(The binary is from the [riscv_friendly](https://github.com/PICOVERAVR/riscv_friendly) test suite)
+  
+If we consider only the hot loop of the program, it runs extremely fast for a software emulator:
+ - debug build, no printing: 11.65 MHz
+ - release build, no printing: 227.61 MHz
+
+If we consider the entire program, rustv is roughly 3.9x faster than the standard RISC-V software emulator:
+ - release build, no printing: 15.07 MHz
+ - spike (a popular RISC-V emulator): 3.88 MHz
+
 ```
-# gen.sh assembles a test program, converts the .elf file to a .hex file and dumps the output
-$ ./programs/gen.sh test.s -dump
-_start():
-   0:   0aa00f93                addi    x31,x0,170
-   4:   0ab00f13                addi    x30,x0,171
-   8:   01efa0b3                slt     x1,x31,x30
-   c:   00008663                beq     x1,x0,18 <true>
+$ cargo run --release bare.hex
 ...
-# run the .hex output
-$ rustv ./test.hex
-reached end of instruction memory
+--------------------------------------------------------
+Executed in  834.00 micros    fish           external
+   usr time  874.00 micros  221.00 micros  653.00 micros
+   sys time    0.00 micros    0.00 micros    0.00 micros
+
+$ time spike -m1 --isa=rv32i spike.elf
+--------------------------------------------------------
+Executed in    3.40 millis    fish           external
+   usr time    3.63 millis  127.00 micros    3.50 millis
+   sys time    0.06 millis   56.00 micros    0.00 millis
 ```
 
+Note that rustv does significantly less than spike, so these results should be taken with a grain of salt.
+
 # Implementation details
- - little-endian
- - misaligned memory accesses cause a fatal trap and result in a panic from the emulator.
- - execution automatically ends when execution reaches the end of instruction memory
-   - the emulator will panic if execution jumps past this point
+ - Little-endian
+ - Misaligned memory accesses cause a fatal trap and result in a panic from the emulator.
+ - the emulator will panic if execution goes out of bounds
  - memory reads and writes are currently not reordered at all

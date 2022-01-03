@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 mod rv32i;
 use rv32i::*;
 
@@ -5,7 +7,7 @@ mod zifencei;
 use zifencei::*;
 
 mod config;
-use config::*;
+pub use config::*;
 
 // implements rv32i
 #[derive(Debug)]
@@ -18,10 +20,10 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(pc: u32) -> State {
+    pub fn new(pc: usize) -> State {
         State {
             regs: [0; 32],
-            pc,
+            pc: pc as u32,
             ret: 0,
         }
     }
@@ -100,11 +102,12 @@ pub fn sext(x: u32, b: usize) -> u32 {
 }
 
 pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
+    let start = Instant::now();
     loop {
-        let upc = s.pc as usize;
+        let upc = s.pc as usize - START_ADDR;
 
         if upc >= imem.len() {
-            panic!("exceeded instruction memory with address 0x{:x} ({})", upc, upc);
+            panic!("exceeded instruction memory with address 0x{:x} ({}) (access 0x{:x}, len 0x{:x})", s.pc, s.pc, upc, imem.len());
         }
 
         let instr_32 = imem[upc] as u32 | 
@@ -215,7 +218,7 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
 
                 match res {
                     Action::Resume => (),
-                    Action::Terminate => return s,
+                    Action::Terminate => break,
                 }
             },
             Itype::Fence {_rd, _rs1, _succ, _pred, _fm} => (),
@@ -224,6 +227,13 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
         s.regs[0] = 0; // reset zero register in case anything wrote to it
         s.ret += 1;
     }
+
+    let duration = start.elapsed();
+    let ips = s.ret as f64 / duration.as_secs_f64() / 1000000.0;
+    println!("terminating execution");
+    println!("{} instructions over {:?} ({:.3}M instr/sec)", s.ret, duration, ips);
+
+    s
 }
 
 #[cfg(test)]

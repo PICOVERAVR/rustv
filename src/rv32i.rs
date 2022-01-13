@@ -253,8 +253,8 @@ pub enum Action {
 
 pub fn ecall(s: &mut State) -> Action {
     match s.regs[8] {
-        0 => assert_eq!(s.regs[9], s.regs[18], "test {}, l: 0x{:08x}, r: 0x{:08x}", s.regs[5], s.regs[9], s.regs[18]),
-        1 => print!("{}", s.regs[9] as u8 as char),
+        0 => assert_eq!(s.regs[6], s.regs[7], "l: 0x{:08x}, r: 0x{:08x}", s.regs[6], s.regs[7]),
+        1 => print!("{}", s.regs[6] as u8 as char),
         err => panic!("unknown ecall parameter 0x{:x} in x8, pc 0x{:x}", err, s.pc - 4)
     }
 

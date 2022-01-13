@@ -17,6 +17,7 @@ fn main() -> std::io::Result<()>{
 
     let s = State::new(START_ADDR);
 
+    println!("starting execution");
     run(iv, s, &mut dv);
 
     Ok(())

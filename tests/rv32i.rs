@@ -1,4 +1,4 @@
-use rustv::{State, run};
+use rustv::{run, State};
 
 #[test]
 fn addi() {
@@ -7,9 +7,10 @@ fn addi() {
         0x13, 0x01, 0xf0, 0xff, // addi x2, x0, -1
         0x93, 0x01, 0xf0, 0x0f, // addi x3, x0, 255
         0x13, 0x02, 0xf0, 0x0f, // addi x4, x0, 255
+        0x73, 0x00, 0x16, 0x00, // ebreak
     ];
 
-    let s = State::new(0);
+    let s = State::new(0, 0, vec![]);
 
     let regs = run(iv, s, &mut vec![]).gprs();
 
@@ -22,7 +23,6 @@ fn addi() {
 
 #[test]
 fn st() {
-
     // write 0xffffffff, then 0x0000, then 0xff to the same memory location
     let iv = vec![
         0x93, 0x00, 0x40, 0x00, // addi x1, x0, 4
@@ -32,9 +32,10 @@ fn st() {
         0x23, 0x90, 0x20, 0x00, // sh x2, 0(x1)
         0x13, 0x01, 0xf0, 0x0f, // addi x2, x0, 255
         0x23, 0x80, 0x20, 0x00, // sb x2, 0(x1)
+        0x73, 0x00, 0x16, 0x00, // ebreak
     ];
 
-    let s = State::new(0);
+    let s = State::new(0, 0, vec![]);
 
     let mut dv = vec![0; 8];
 
@@ -58,9 +59,10 @@ fn ld() {
         0x83, 0x20, 0x00, 0x00, // lw x1, 0(x0)
         0x03, 0x11, 0x20, 0x00, // lh x2, 2(x0)
         0x83, 0x01, 0x30, 0x00, // lb x3, 3(x0)
+        0x73, 0x00, 0x16, 0x00, // ebreak
     ];
 
-    let s = State::new(0);
+    let s = State::new(0, 0, vec![]);
 
     let mut dv = vec![1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -92,9 +94,10 @@ fn jal() {
         0x00, 0x00, 0x00, 0x00, // <skip>
         0x00, 0x00, 0x00, 0x00, // <skip>
         0x93, 0x01, 0x10, 0x00, // end: addi x3, x0, 1
+        0x73, 0x00, 0x16, 0x00, // ebreak
     ];
 
-    let s = State::new(0);
+    let s = State::new(0, 0, vec![]);
 
     let new_s = run(iv, s, &mut vec![]);
     let regs = new_s.gprs();
@@ -106,5 +109,5 @@ fn jal() {
     assert_eq!(regs[4], 24);
     assert_eq!(regs[30], 0xab);
     assert_eq!(regs[31], 0xaa);
-    assert_eq!(new_s.pc(), 48);
+    assert_eq!(new_s.pc(), 52);
 }

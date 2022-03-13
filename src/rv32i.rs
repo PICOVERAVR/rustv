@@ -1,4 +1,4 @@
-use crate::{State, sext};
+use crate::{sext, State};
 
 // core rv32i instructions
 
@@ -91,13 +91,21 @@ pub fn srli(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
 }
 
 pub fn srai(s: &mut State, rs1: usize, ext_imm: u32, rd: usize) {
-    // need to mask off high bits of ext_imm since only the lower 5 
+    // need to mask off high bits of ext_imm since only the lower 5
     // are used and the 10th bit is set to 1
     s.regs[rd] = (s.regs[rs1] as i32 >> (ext_imm & 0b11111) as i32) as u32
 }
 
 // implements lb(u), lh(u), lw
-pub fn lx(s: &mut State, rs1: usize, ext_imm: u32, rd: usize, dmem: &[u8], len: usize, signed: bool) {
+pub fn lx(
+    s: &mut State,
+    rs1: usize,
+    ext_imm: u32,
+    rd: usize,
+    dmem: &[u8],
+    len: usize,
+    signed: bool,
+) {
     assert!(len == 8 || len == 16 || len == 32);
 
     // wrapping add to handle negative immediates
@@ -115,7 +123,7 @@ pub fn lx(s: &mut State, rs1: usize, ext_imm: u32, rd: usize, dmem: &[u8], len: 
 
     let mut val: u32 = 0;
     for i in (0..len).step_by(8) {
-        val |= (dmem[addr + i/8] as u32) << i;
+        val |= (dmem[addr + i / 8] as u32) << i;
     }
 
     // lb and lh need sign-extension
@@ -128,7 +136,7 @@ pub fn lx(s: &mut State, rs1: usize, ext_imm: u32, rd: usize, dmem: &[u8], len: 
 // implements sb, sh, sw
 pub fn sx(s: &mut State, rs1: usize, ext_imm: u32, rs2: usize, dmem: &mut [u8], len: usize) {
     assert!(len == 8 || len == 16 || len == 32);
-    
+
     // wrapping add to handle negative immediates
     let addr = (s.regs[rs1].wrapping_add(ext_imm)) as usize;
     let word_addr = addr / 4;
@@ -146,7 +154,7 @@ pub fn sx(s: &mut State, rs1: usize, ext_imm: u32, rs2: usize, dmem: &mut [u8], 
     let val = s.regs[rs2];
 
     for i in (0..len).step_by(8) {
-        dmem[addr + i/8] = (val >> i) as u8;
+        dmem[addr + i / 8] = (val >> i) as u8;
     }
 }
 
@@ -248,14 +256,22 @@ pub fn jal(s: &mut State, rd: usize, imm: u32) {
 
 pub enum Action {
     Terminate, // terminate execution
-    Resume, // resume execution
+    Resume,    // resume execution
 }
 
 pub fn ecall(s: &mut State) -> Action {
     match s.regs[8] {
-        0 => assert_eq!(s.regs[6], s.regs[7], "l: 0x{:08x}, r: 0x{:08x}", s.regs[6], s.regs[7]),
+        0 => assert_eq!(
+            s.regs[6], s.regs[7],
+            "l: 0x{:08x}, r: 0x{:08x}",
+            s.regs[6], s.regs[7]
+        ),
         1 => print!("{}", s.regs[6] as u8 as char),
-        err => panic!("unknown ecall parameter 0x{:x} in x8, pc 0x{:x}", err, s.pc - 4)
+        err => panic!(
+            "unknown ecall parameter 0x{:x} in x8, pc 0x{:x}",
+            err,
+            s.pc - 4
+        ),
     }
 
     Action::Resume

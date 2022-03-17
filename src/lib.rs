@@ -6,20 +6,24 @@ use rv32i::*;
 mod zifencei;
 use zifencei::*;
 
+mod rv32m;
+use rv32m::*;
+
 // list of recognized extensions (may not be fully supported!)
 #[derive(Debug, PartialEq)]
 pub enum Ext {
     All,
     Zifencei,
+    M,
 }
 
 // implements rv32i
+// xlen == 32
 #[derive(Debug)]
 pub struct State {
     regs: [u32; 32],
     pc: u32,
     pc_offset: u32,
-    //xlen: u8, // register width
     ret: u64, // number of retired instructions
 
     ext: Vec<Ext>,
@@ -199,7 +203,7 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
 
         if upc >= imem.len() {
             panic!(
-                "exceeded instruction memory with address 0x{:x} ({}) (access 0x{:x}, len 0x{:x})",
+                "exceeded instruction memory with address 0x{:x} ({}) (access 0x{:x} but memory size 0x{:x})",
                 s.pc,
                 s.pc,
                 upc,
@@ -235,18 +239,32 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
                     continue;
                 }
 
-                match funct3 {
-                    0b000 if funct7 == 0 => add(&mut s, rs1, rs2, rd),
-                    0b000 if funct7 != 0 => sub(&mut s, rs1, rs2, rd),
-                    0b001 => sll(&mut s, rs1, rs2, rd),
-                    0b010 => slt(&mut s, rs1, rs2, rd),
-                    0b011 => sltu(&mut s, rs1, rs2, rd),
-                    0b100 => xor(&mut s, rs1, rs2, rd),
-                    0b101 if funct7 == 0 => srl(&mut s, rs1, rs2, rd),
-                    0b101 if funct7 != 0 => sra(&mut s, rs1, rs2, rd),
-                    0b110 => or(&mut s, rs1, rs2, rd),
-                    0b111 => and(&mut s, rs1, rs2, rd),
-                    _ => panic!("unrecognized funct3 field {:03b}", funct3),
+                match _op {
+                    0b0110011 if s.has_ext(Ext::M) && funct7 == 1 => match funct3 {
+                        0b000 => mul(&mut s, rs1, rs2, rd),
+                        0b001 => mulh(&mut s, rs1, rs2, rd),
+                        0b010 => mulhsu(&mut s, rs1, rs2, rd),
+                        0b011 => mulhu(&mut s, rs1, rs2, rd),
+                        0b100 => div(&mut s, rs1, rs2, rd),
+                        0b101 => divu(&mut s, rs1, rs2, rd),
+                        0b110 => rem(&mut s, rs1, rs2, rd),
+                        0b111 => remu(&mut s, rs1, rs2, rd),
+                        _ => panic!("unrecognized funct3 field {:03b}", funct3),
+                    },
+                    0b0110011 => match funct3 {
+                        0b000 if funct7 == 0 => add(&mut s, rs1, rs2, rd),
+                        0b000 if funct7 != 0 => sub(&mut s, rs1, rs2, rd),
+                        0b001 => sll(&mut s, rs1, rs2, rd),
+                        0b010 => slt(&mut s, rs1, rs2, rd),
+                        0b011 => sltu(&mut s, rs1, rs2, rd),
+                        0b100 => xor(&mut s, rs1, rs2, rd),
+                        0b101 if funct7 == 0 => srl(&mut s, rs1, rs2, rd),
+                        0b101 if funct7 != 0 => sra(&mut s, rs1, rs2, rd),
+                        0b110 => or(&mut s, rs1, rs2, rd),
+                        0b111 => and(&mut s, rs1, rs2, rd),
+                        _ => panic!("unrecognized funct3 field {:03b}", funct3),
+                    },
+                    _ => panic!("unrecognized op field {:07b}", _op),
                 }
             }
             Itype::I {

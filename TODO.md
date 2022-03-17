@@ -1,0 +1,3 @@
+# TODOs
+
+1. more exhaustive checking of fields when decoding instructions...

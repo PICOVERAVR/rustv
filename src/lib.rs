@@ -3,11 +3,8 @@ use std::time::Instant;
 mod rv32i;
 use rv32i::*;
 
-mod zifencei;
-use zifencei::*;
-
 mod rv32m;
-use rv32m::*;
+mod zifencei;
 
 // list of recognized extensions (may not be fully supported!)
 #[derive(Debug, PartialEq)]
@@ -19,7 +16,7 @@ pub enum Ext {
 
 // implements rv32i
 // xlen == 32
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct State {
     regs: [u32; 32],
     pc: u32,
@@ -241,27 +238,27 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
 
                 match _op {
                     0b0110011 if s.has_ext(Ext::M) && funct7 == 1 => match funct3 {
-                        0b000 => mul(&mut s, rs1, rs2, rd),
-                        0b001 => mulh(&mut s, rs1, rs2, rd),
-                        0b010 => mulhsu(&mut s, rs1, rs2, rd),
-                        0b011 => mulhu(&mut s, rs1, rs2, rd),
-                        0b100 => div(&mut s, rs1, rs2, rd),
-                        0b101 => divu(&mut s, rs1, rs2, rd),
-                        0b110 => rem(&mut s, rs1, rs2, rd),
-                        0b111 => remu(&mut s, rs1, rs2, rd),
+                        0b000 => s.mul(rs1, rs2, rd),
+                        0b001 => s.mulh(rs1, rs2, rd),
+                        0b010 => s.mulhsu(rs1, rs2, rd),
+                        0b011 => s.mulhu(rs1, rs2, rd),
+                        0b100 => s.div(rs1, rs2, rd),
+                        0b101 => s.divu(rs1, rs2, rd),
+                        0b110 => s.rem(rs1, rs2, rd),
+                        0b111 => s.remu(rs1, rs2, rd),
                         _ => panic!("unrecognized funct3 field {:03b}", funct3),
                     },
                     0b0110011 => match funct3 {
-                        0b000 if funct7 == 0 => add(&mut s, rs1, rs2, rd),
-                        0b000 if funct7 != 0 => sub(&mut s, rs1, rs2, rd),
-                        0b001 => sll(&mut s, rs1, rs2, rd),
-                        0b010 => slt(&mut s, rs1, rs2, rd),
-                        0b011 => sltu(&mut s, rs1, rs2, rd),
-                        0b100 => xor(&mut s, rs1, rs2, rd),
-                        0b101 if funct7 == 0 => srl(&mut s, rs1, rs2, rd),
-                        0b101 if funct7 != 0 => sra(&mut s, rs1, rs2, rd),
-                        0b110 => or(&mut s, rs1, rs2, rd),
-                        0b111 => and(&mut s, rs1, rs2, rd),
+                        0b000 if funct7 == 0 => s.add(rs1, rs2, rd),
+                        0b000 if funct7 != 0 => s.sub(rs1, rs2, rd),
+                        0b001 => s.sll(rs1, rs2, rd),
+                        0b010 => s.slt(rs1, rs2, rd),
+                        0b011 => s.sltu(rs1, rs2, rd),
+                        0b100 => s.xor(rs1, rs2, rd),
+                        0b101 if funct7 == 0 => s.srl(rs1, rs2, rd),
+                        0b101 if funct7 != 0 => s.sra(rs1, rs2, rd),
+                        0b110 => s.or(rs1, rs2, rd),
+                        0b111 => s.and(rs1, rs2, rd),
                         _ => panic!("unrecognized funct3 field {:03b}", funct3),
                     },
                     _ => panic!("unrecognized op field {:07b}", _op),
@@ -278,30 +275,30 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
 
                 match _op {
                     0b0010011 => match funct3 {
-                        0b000 => addi(&mut s, rs1, ext_imm, rd),
-                        0b010 => slti(&mut s, rs1, ext_imm, rd),
-                        0b011 => sltiu(&mut s, rs1, ext_imm, rd),
-                        0b100 => xori(&mut s, rs1, ext_imm, rd),
-                        0b110 => ori(&mut s, rs1, ext_imm, rd),
-                        0b111 => andi(&mut s, rs1, ext_imm, rd),
-                        0b001 => slli(&mut s, rs1, ext_imm, rd),
-                        0b101 if imm >> 10 == 0 => srli(&mut s, rs1, ext_imm, rd),
-                        0b101 if imm >> 10 != 0 => srai(&mut s, rs1, ext_imm, rd),
+                        0b000 => s.addi(rs1, ext_imm, rd),
+                        0b010 => s.slti(rs1, ext_imm, rd),
+                        0b011 => s.sltiu(rs1, ext_imm, rd),
+                        0b100 => s.xori(rs1, ext_imm, rd),
+                        0b110 => s.ori(rs1, ext_imm, rd),
+                        0b111 => s.andi(rs1, ext_imm, rd),
+                        0b001 => s.slli(rs1, ext_imm, rd),
+                        0b101 if imm >> 10 == 0 => s.srli(rs1, ext_imm, rd),
+                        0b101 if imm >> 10 != 0 => s.srai(rs1, ext_imm, rd),
                         _ => panic!("unrecognized funct3 field {:03b}", funct3),
                     },
                     0b0000011 => {
                         let ext_imm = sext(imm, 12);
                         match funct3 {
-                            0b000 => lx(&mut s, rs1, ext_imm, rd, dmem, 8, true), // lb
-                            0b100 => lx(&mut s, rs1, ext_imm, rd, dmem, 8, false), // lbu
-                            0b001 => lx(&mut s, rs1, ext_imm, rd, dmem, 16, true), // lh
-                            0b101 => lx(&mut s, rs1, ext_imm, rd, dmem, 16, false), // lhu
-                            0b010 => lx(&mut s, rs1, ext_imm, rd, dmem, 32, false), // lw
+                            0b000 => s.lx(rs1, ext_imm, rd, dmem, 8, true),  // lb
+                            0b100 => s.lx(rs1, ext_imm, rd, dmem, 8, false), // lbu
+                            0b001 => s.lx(rs1, ext_imm, rd, dmem, 16, true), // lh
+                            0b101 => s.lx(rs1, ext_imm, rd, dmem, 16, false), // lhu
+                            0b010 => s.lx(rs1, ext_imm, rd, dmem, 32, false), // lw
                             _ => panic!("unrecognized funct3 field {:03b}", funct3),
                         };
                     }
-                    0b1100111 => jalr(&mut s, rs1, ext_imm, rd),
-                    0b0001111 if s.has_ext(Ext::Zifencei) => zifence_i(&mut s, rs1, ext_imm, rd),
+                    0b1100111 => s.jalr(rs1, ext_imm, rd),
+                    0b0001111 if s.has_ext(Ext::Zifencei) => s.zifence_i(rs1, ext_imm, rd),
                     _ => panic!("unrecognized I type op field {:07b}", _op),
                 }
             }
@@ -314,9 +311,9 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
             } => {
                 let ext_imm = sext(imm, 12);
                 match funct3 {
-                    0b000 => sx(&mut s, rs1, ext_imm, rs2, dmem, 8),
-                    0b001 => sx(&mut s, rs1, ext_imm, rs2, dmem, 16),
-                    0b010 => sx(&mut s, rs1, ext_imm, rs2, dmem, 32),
+                    0b000 => s.sx(rs1, ext_imm, rs2, dmem, 8),
+                    0b001 => s.sx(rs1, ext_imm, rs2, dmem, 16),
+                    0b010 => s.sx(rs1, ext_imm, rs2, dmem, 32),
                     _ => panic!("unrecognized funct3 field {:03b}", funct3),
                 }
             }
@@ -330,25 +327,25 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
                 let ext_imm = sext(imm, 12);
 
                 match funct3 {
-                    0b000 => beq(&mut s, rs1, rs2, ext_imm),
-                    0b001 => bne(&mut s, rs1, rs2, ext_imm),
-                    0b100 => blt(&mut s, rs1, rs2, ext_imm),
-                    0b101 => bge(&mut s, rs1, rs2, ext_imm),
-                    0b110 => bltu(&mut s, rs1, rs2, ext_imm),
-                    0b111 => bgeu(&mut s, rs1, rs2, ext_imm),
+                    0b000 => s.beq(rs1, rs2, ext_imm),
+                    0b001 => s.bne(rs1, rs2, ext_imm),
+                    0b100 => s.blt(rs1, rs2, ext_imm),
+                    0b101 => s.bge(rs1, rs2, ext_imm),
+                    0b110 => s.bltu(rs1, rs2, ext_imm),
+                    0b111 => s.bgeu(rs1, rs2, ext_imm),
                     _ => panic!("unrecognized funct3 field {:03b}", funct3),
                 }
             }
             Itype::U { _op, rd, imm } => match _op {
-                0b0110111 => lui(&mut s, rd, imm),
-                0b0010111 => auipc(&mut s, rd, imm),
+                0b0110111 => s.lui(rd, imm),
+                0b0010111 => s.auipc(rd, imm),
                 _ => panic!("unrecognized U type op field {:07b}", _op),
             },
-            Itype::J { _op, rd, imm } => jal(&mut s, rd, imm),
+            Itype::J { _op, rd, imm } => s.jal(rd, imm),
             Itype::Ecall { imm } => {
                 let res = match imm {
-                    0 => ecall(&mut s),
-                    _ => ebreak(&mut s),
+                    0 => s.ecall(),
+                    _ => s.ebreak(),
                 };
 
                 match res {

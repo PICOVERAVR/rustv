@@ -1,0 +1,3 @@
+[submodule "riscv_friendly"]
+	path = riscv_friendly
+	url = https://github.com/PICOVERAVR/riscv_friendly

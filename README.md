@@ -3,11 +3,10 @@
 A simple RISC-V software emulator written in Rust.
 
 # Supported Instruction Sets (and Extensions)
-- rv32i
+- RV32I
+- M
 - Zifencei (instruction is supported but does nothing)
 - TODO: Zicsr
-- TODO: rv64i
-- TODO: M
 
 # Performance
 (The binary is from the [riscv_friendly](https://github.com/PICOVERAVR/riscv_friendly) test suite)

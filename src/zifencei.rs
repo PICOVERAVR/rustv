@@ -1,5 +1,5 @@
 use crate::State;
 
 impl State {
-    pub fn zifence_i(&mut self, _rs1: usize, _ext_imm: u32, _rd: usize) {}
+	pub fn fencei(&mut self, _rd: usize, _rs1: usize, _succ: u8, _pred: u8, _fm: u8) {}
 }

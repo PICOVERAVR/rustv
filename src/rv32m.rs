@@ -2,14 +2,25 @@ use crate::State;
 
 // multiply extension instructions
 
+// used for 64-bit multiplies and divides
+fn sext64(x: u32) -> i64 {
+    if (x >> 31) & 1 == 1 {
+        return (0xFFFF_FFFF_0000_0000u64 | x as u64) as i64;
+    }
+
+    x as i64
+}
+
 impl State {
     pub fn mul(&mut self, rs1: usize, rs2: usize, rd: usize) {
         self.regs[rd] = self.regs[rs1].wrapping_mul(self.regs[rs2]);
     }
 
     pub fn mulh(&mut self, rs1: usize, rs2: usize, rd: usize) {
-        let tmp = (self.regs[rs1] as i64).wrapping_mul(self.regs[rs2] as i64);
-        self.regs[rd] = ((tmp >> 32) & 0xFFFF_FFFF) as u32;
+        let multiplicand = sext64(self.regs[rs1]);
+        let multiplier = sext64(self.regs[rs2]);
+        let res = multiplicand.wrapping_mul(multiplier);
+        self.regs[rd] = ((res >> 32) & 0xFFFF_FFFF) as u32;
     }
 
     pub fn mulhu(&mut self, rs1: usize, rs2: usize, rd: usize) {
@@ -18,8 +29,10 @@ impl State {
     }
 
     pub fn mulhsu(&mut self, rs1: usize, rs2: usize, rd: usize) {
-        let tmp = ((self.regs[rs1] as i64) as u64).wrapping_mul(self.regs[rs2] as u64);
-        self.regs[rd] = ((tmp >> 32) & 0xFFFF_FFFF) as u32;
+        let multiplicand = sext64(self.regs[rs1]);
+        let multiplier = self.regs[rs2] as i64;
+        let res = multiplicand.wrapping_mul(multiplier);
+        self.regs[rd] = ((res >> 32) & 0xFFFF_FFFF) as u32;
     }
 
     // dividend = divisor * quotient + remainder

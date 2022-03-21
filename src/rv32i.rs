@@ -281,4 +281,6 @@ impl State {
     pub fn ebreak(&mut self) -> Action {
         Action::Terminate
     }
+
+    pub fn fence(&mut self, _rd: usize, _rs1: usize, _succ: u8, _pred: u8, _fm: u8) {}
 }

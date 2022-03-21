@@ -98,11 +98,12 @@ enum Itype {
         imm: u16,
     },
     Fence {
-        _rd: usize,
-        _rs1: usize,
-        _succ: u8,
-        _pred: u8,
-        _fm: u8,
+        rd: usize,
+        funct3: u8,
+        rs1: usize,
+        succ: u8,
+        pred: u8,
+        fm: u8,
     },
 }
 
@@ -167,18 +168,17 @@ fn crack(instr: u32) -> Itype {
             rs2,
             funct7,
         }, // reg-reg instructions (add, slt, etc)
-        0b1110011 => Itype::Ecall {
+        0b1110011 if rd == 0 && funct3 == 0 && rs1 == 0 => Itype::Ecall {
             imm: (instr >> 20) as u16,
-        }, // ecall - ebreak
-
-        // Zfencei
+        }, // ecall, ebreak
         0b0001111 => Itype::Fence {
-            _rd: rd,
-            _rs1: rs1,
-            _succ: (instr >> 20) as u8,
-            _pred: (instr >> 24) as u8,
-            _fm: (instr >> 28) as u8,
-        }, // fence
+            rd,
+            funct3,
+            rs1,
+            succ: (instr >> 20) as u8,
+            pred: (instr >> 24) as u8,
+            fm: (instr >> 28) as u8,
+        }, // fence, fence.i
 
         _ => panic!("unrecognized opcode 0b{:07b}", _op),
     }
@@ -249,16 +249,18 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
                         _ => panic!("unrecognized funct3 field {:03b}", funct3),
                     },
                     0b0110011 => match funct3 {
+                        // need to check funct7 field in all cases because most bits must be set to
+                        // 0 and we don't want to accidentally execute an invalid instruction
                         0b000 if funct7 == 0 => s.add(rs1, rs2, rd),
-                        0b000 if funct7 != 0 => s.sub(rs1, rs2, rd),
-                        0b001 => s.sll(rs1, rs2, rd),
-                        0b010 => s.slt(rs1, rs2, rd),
-                        0b011 => s.sltu(rs1, rs2, rd),
-                        0b100 => s.xor(rs1, rs2, rd),
+                        0b000 if funct7 == 0b0100000 => s.sub(rs1, rs2, rd),
+                        0b001 if funct7 == 0 => s.sll(rs1, rs2, rd),
+                        0b010 if funct7 == 0 => s.slt(rs1, rs2, rd),
+                        0b011 if funct7 == 0 => s.sltu(rs1, rs2, rd),
+                        0b100 if funct7 == 0 => s.xor(rs1, rs2, rd),
                         0b101 if funct7 == 0 => s.srl(rs1, rs2, rd),
-                        0b101 if funct7 != 0 => s.sra(rs1, rs2, rd),
-                        0b110 => s.or(rs1, rs2, rd),
-                        0b111 => s.and(rs1, rs2, rd),
+                        0b101 if funct7 == 0b0100000 => s.sra(rs1, rs2, rd),
+                        0b110 if funct7 == 0 => s.or(rs1, rs2, rd),
+                        0b111 if funct7 == 0 => s.and(rs1, rs2, rd),
                         _ => panic!("unrecognized funct3 field {:03b}", funct3),
                     },
                     _ => panic!("unrecognized op field {:07b}", _op),
@@ -298,7 +300,6 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
                         };
                     }
                     0b1100111 => s.jalr(rs1, ext_imm, rd),
-                    0b0001111 if s.has_ext(Ext::Zifencei) => s.zifence_i(rs1, ext_imm, rd),
                     _ => panic!("unrecognized I type op field {:07b}", _op),
                 }
             }
@@ -345,7 +346,8 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
             Itype::Ecall { imm } => {
                 let res = match imm {
                     0 => s.ecall(),
-                    _ => s.ebreak(),
+                    1 => s.ebreak(),
+                    _ => panic!("unrecognized ecall field {:012b}", imm),
                 };
 
                 match res {
@@ -353,13 +355,19 @@ pub fn run(imem: Vec<u8>, mut s: State, dmem: &mut Vec<u8>) -> State {
                     Action::Terminate => break,
                 }
             }
+            // NOTE: fence and fence.i both do nothing atm
             Itype::Fence {
-                _rd,
-                _rs1,
-                _succ,
-                _pred,
-                _fm,
-            } => (),
+                rd,
+                funct3,
+                rs1,
+                succ,
+                pred,
+                fm,
+            } => match funct3 {
+                0 => s.fence(rd, rs1, succ, pred, fm),
+                1 if s.has_ext(Ext::Zifencei) => s.fencei(rd, rs1, succ, pred, fm),
+                _ => panic!("unrecognized funct3 field {:03b}", funct3),
+            },
         }
 
         s.regs[0] = 0; // reset zero register in case anything wrote to it
